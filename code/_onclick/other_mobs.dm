@@ -52,13 +52,13 @@
 
 	if(!gloves && !mutations.len) return
 	var/obj/item/clothing/gloves/G = gloves
-	if((LASER in mutations) && a_intent == I_HURT)
+	if((MUTATION_LASER in mutations) && a_intent == I_HURT)
 		LaserEyes(A) // moved into a proc below
 
 	else if(istype(G) && G.Touch(A,0)) // for magic gloves
 		return
 
-	else if(TK in mutations)
+	else if(MUTATION_TK in mutations)
 		A.attack_tk(src)
 
 /mob/living/RestrainedClickOn(var/atom/A)
@@ -162,5 +162,9 @@
 			admin_attack_log(src, A, "Has [attacktext] its victim.", "Has been [attacktext] by its attacker.", attacktext)
 	setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	var/damage = rand(melee_damage_lower, melee_damage_upper)
-	if(A.attack_generic(src,damage,attacktext,environment_smash) && loc && attack_sound)
-		playsound(loc, attack_sound, 50, 1, 1)
+	if(istype(A,/mob/living/carbon))
+		if(A.attack_generic(src, damage, attacktext) && loc && attack_sound)
+			playsound(loc, attack_sound, 50, 1, 1)
+	else
+		if(A.attack_generic(src, damage, attacktext, environment_smash, damtype, defense) && loc && attack_sound)
+			playsound(loc, attack_sound, 50, 1, 1)

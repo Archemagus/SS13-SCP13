@@ -67,9 +67,6 @@
 	if(stat || paralysis || stunned || weakened)
 		return
 
-	if (is_scp012_affected())
-		return
-
 	face_atom(A) // change direction to face what you clicked on
 
 	if(!canClick()) // in the year 2000...
@@ -176,7 +173,7 @@
 
 /mob/living/UnarmedAttack(var/atom/A, var/proximity_flag)
 
-	if(!ticker)
+	if(GAME_STATE < RUNLEVEL_GAME)
 		to_chat(src, "You cannot attack people before the game has started.")
 		return 0
 
@@ -195,9 +192,9 @@
 */
 /mob/proc/RangedAttack(var/atom/A, var/params)
 	if(!mutations.len) return
-	if((LASER in mutations) && a_intent == I_HURT)
+	if((MUTATION_LASER in mutations) && a_intent == I_HURT)
 		LaserEyes(A) // moved into a proc below
-	else if(TK in mutations)
+	else if(MUTATION_TK in mutations)
 		setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 		A.attack_tk(src)
 /*
@@ -255,6 +252,9 @@
 	Unused except for AI
 */
 /mob/proc/AltClickOn(var/atom/A)
+	var/datum/extension/on_click/alt = get_extension(A, /datum/extension/on_click/alt)
+	if(alt && alt.on_click(src))
+		return
 	A.AltClick(src)
 
 /atom/proc/AltClick(var/mob/user)
@@ -294,6 +294,8 @@
 	return
 
 /atom/proc/CtrlAltClick(var/mob/user)
+	if(user.client && user.client.eye == user)
+		user.pointed(src)
 	return
 
 /*
@@ -337,9 +339,11 @@
 		if(dx > 0)	direction = EAST
 		else		direction = WEST
 	if(direction != dir)
+		if(facing_dir)
+			facing_dir = direction
 		facedir(direction)
 
-GLOBAL_VAR_INIT(void, create_click_catcher())
+GLOBAL_LIST_INIT(click_catchers, create_click_catcher())
 
 /obj/screen/click_catcher
 	icon = 'icons/mob/screen_gen.dmi'
@@ -348,11 +352,14 @@ GLOBAL_VAR_INIT(void, create_click_catcher())
 	mouse_opacity = 2
 	screen_loc = "CENTER-7,CENTER-7"
 
+/obj/screen/click_catcher/Destroy()
+	return QDEL_HINT_LETMELIVE
+
 /proc/create_click_catcher()
 	. = list()
 	for(var/i = 0, i<15, i++)
 		for(var/j = 0, j<15, j++)
-			var/obj/screen/click_catcher/CC = new
+			var/obj/screen/click_catcher/CC = new()
 			CC.screen_loc = "NORTH-[i],EAST-[j]"
 			. += CC
 

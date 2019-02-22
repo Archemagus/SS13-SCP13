@@ -67,7 +67,7 @@
 		using = new /obj/screen()
 		using.SetName("mov_intent")
 		using.icon = ui_style
-		using.icon_state = (mymob.m_intent == "run" ? "running" : "walking")
+		using.icon_state = mymob.move_intent.hud_icon_state
 		using.screen_loc = ui_movi
 		using.color = ui_color
 		using.alpha = ui_alpha
@@ -199,7 +199,7 @@
 		mymob.fire.screen_loc = ui_fire
 		hud_elements |= mymob.fire
 
-		mymob.healths = new /obj/screen()
+		mymob.healths = new /obj/screen/health()
 		mymob.healths.icon = ui_style
 		mymob.healths.icon_state = "health0"
 		mymob.healths.SetName("health")
@@ -222,6 +222,13 @@
 		mymob.bodytemp.screen_loc = ui_temp
 		hud_elements |= mymob.bodytemp
 
+		mymob.minsbodytemp = new /obj/screen()
+		mymob.minsbodytemp.icon = 'icons/mob/screen/status.dmi'
+		mymob.minsbodytemp.icon_state = "mintemp0"
+		mymob.minsbodytemp.name = "air_temperature"
+		mymob.minsbodytemp.screen_loc = ui_mintemp
+		hud_elements |= mymob.minsbodytemp
+
 	if(target.isSynthetic())
 		target.cells = new /obj/screen()
 		target.cells.icon = 'icons/mob/screen1_robot.dmi'
@@ -239,12 +246,11 @@
 		hud_elements |= mymob.nutrition_icon
 
 	mymob.fixeye = new /obj/screen()
-	mymob.fixeye.icon = ui_style
+	mymob.fixeye.icon = 'icons/mob/screen/infinity.dmi'
 	mymob.fixeye.icon_state = "fixeye"
 	mymob.fixeye.name = "fixeye"
 	mymob.fixeye.screen_loc = ui_fixeye
 	hud_elements |= mymob.fixeye
-
 
 	mymob.pain = new /obj/screen/fullscreen/pain( null )
 	hud_elements |= mymob.pain
@@ -278,17 +284,6 @@
 	mymob.radio_use_icon.icon = ui_style
 	mymob.radio_use_icon.color = ui_color
 	mymob.radio_use_icon.alpha = ui_alpha
-
-	if(ishuman(mymob))
-		var/mob/living/carbon/human/H = mymob
-		H.fov = new /obj/screen()
-		H.fov.icon = 'icons/mob/hide.dmi'
-		H.fov.icon_state = "combat"
-		H.fov.name = " "
-		H.fov.screen_loc = "1,1"
-		H.fov.mouse_opacity = 0
-		H.fov.layer = UNDER_HUD_LAYER
-		hud_elements |= H.fov
 
 	mymob.client.screen = list()
 
