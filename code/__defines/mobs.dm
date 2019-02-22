@@ -57,7 +57,7 @@
 #define GETPULSE_HAND 0 // Less accurate. (hand)
 #define GETPULSE_TOOL 1 // More accurate. (med scanner, sleeper, etc.)
 
-//intent flags, why wasn't this done the first time?
+//intent flags
 #define I_HELP		"help"
 #define I_DISARM	"disarm"
 #define I_GRAB		"grab"
@@ -96,20 +96,21 @@
 #define DEFAULT_ATTACK_COOLDOWN 8 //Default timeout for aggressive actions
 #define DEFAULT_QUICK_COOLDOWN  4
 
+#define FAST_WEAPON_COOLDOWN 3
+#define DEFAULT_WEAPON_COOLDOWN 5
+#define SLOW_WEAPON_COOLDOWN 7
 
 #define MIN_SUPPLIED_LAW_NUMBER 15
 #define MAX_SUPPLIED_LAW_NUMBER 50
 
-#define MAX_SUPPLIED_LAW_NUMBER 50
+// Character's economic class
+#define CLASS_UPPER 		"Wealthy"
+#define CLASS_UPMID			"Well-off"
+#define CLASS_MIDDLE 		"Average"
+#define CLASS_LOWMID		"Underpaid"
+#define CLASS_LOWER			"Poor"
 
-// NT's alignment towards the character
-#define COMPANY_LOYAL 			"Loyal"
-#define COMPANY_SUPPORTATIVE	"Supportive"
-#define COMPANY_NEUTRAL 		"Neutral"
-#define COMPANY_SKEPTICAL		"Skeptical"
-#define COMPANY_OPPOSED			"Opposed"
-
-#define COMPANY_ALIGNMENTS		list(COMPANY_LOYAL,COMPANY_SUPPORTATIVE,COMPANY_NEUTRAL,COMPANY_SKEPTICAL,COMPANY_OPPOSED)
+#define ECONOMIC_CLASS		list(CLASS_UPPER,CLASS_UPMID,CLASS_MIDDLE,CLASS_LOWMID,CLASS_LOWER)
 
 // Defines mob sizes, used by lockers and to determine what is considered a small sized mob, etc.
 #define MOB_LARGE  		40
@@ -190,12 +191,32 @@
 #define BP_POLYP    "polyp segment"
 #define BP_ANCHOR   "anchoring ligament"
 #define BP_PHORON   "phoron filter"
+#define BP_ACETONE  "acetone reactor"
 
 // Robo Organs.
 #define BP_POSIBRAIN	"posibrain"
 #define BP_VOICE		"vocal synthesiser"
 #define BP_STACK		"stack"
 #define BP_OPTICS		"optics"
+#define BP_FLOAT		"floatation disc"
+#define BP_JETS			"maneuvering jets"
+#define BP_COOLING_FINS "cooling fins"
+
+//Augmetations
+#define BP_AUGMENT_R_ARM         "right arm augment"
+#define BP_AUGMENT_L_ARM         "left arm augment"
+#define BP_AUGMENT_R_HAND        "right hand augment"
+#define BP_AUGMENT_L_HAND        "left hand augment"
+#define BP_AUGMENT_R_LEG         "right leg augment"
+#define BP_AUGMENT_L_LEG         "left leg augment"
+#define BP_AUGMENT_CHEST_ARMOUR   "chest armor augment"
+#define BP_AUGMENT_CHEST_ACTIVE  "active chest augment"
+#define BP_AUGMENT_HEAD           "head augment"
+
+//Augment flags
+#define AUGMENTATION_MECHANIC 1
+#define AUGMENTATION_ORGANIC  2
+
 
 // Limbs.
 #define BP_L_FOOT "l_foot"
@@ -211,6 +232,12 @@
 #define BP_GROIN  "groin"
 #define BP_ALL_LIMBS list(BP_CHEST, BP_GROIN, BP_HEAD, BP_L_ARM, BP_R_ARM, BP_L_HAND, BP_R_HAND, BP_L_LEG, BP_R_LEG, BP_L_FOOT, BP_R_FOOT)
 #define BP_BY_DEPTH list(BP_HEAD, BP_L_HAND, BP_R_HAND, BP_L_ARM, BP_R_ARM, BP_L_FOOT, BP_R_FOOT, BP_L_LEG, BP_R_LEG, BP_GROIN, BP_CHEST)
+
+// Prosthetic helpers.
+#define BP_IS_ROBOTIC(org)  (org.status & ORGAN_ROBOTIC)
+#define BP_IS_ASSISTED(org) (org.status & ORGAN_ASSISTED)
+#define BP_IS_BRITTLE(org)  (org.status & ORGAN_BRITTLE)
+#define BP_IS_CRYSTAL(org)  (org.status & ORGAN_CRYSTAL)
 
 #define SYNTH_BLOOD_COLOUR "#030303"
 #define SYNTH_FLESH_COLOUR "#575757"
@@ -257,11 +284,16 @@
 #define SPECIES_IPC         "Machine"
 #define SPECIES_UNATHI      "Unathi"
 #define SPECIES_SKRELL      "Skrell"
-#define SPECIES_NABBER      "Giant Armoured Serpentid"
+#define SPECIES_NABBER      "giant armoured serpentid"
 #define SPECIES_PROMETHEAN  "Promethean"
-#define SPECIES_BOGANI      "Bogani"
-#define SPECIES_EGYNO       "Egyno"
 #define SPECIES_XENO        "Xenophage"
+#define SPECIES_RESOMI      "Resomi"
+#define SPECIES_ALIEN       "Humanoid"
+#define SPECIES_ADHERENT    "Adherent"
+#define SPECIES_GOLEM       "Golem"
+#define SPECIES_YEOSA       "Yeosa'Unathi"
+#define SPECIES_EROSAN      "Erosan'Unathi"
+
 
 #define SURGERY_CLOSED 0
 #define SURGERY_OPEN 1
@@ -278,3 +310,17 @@
 #define AURA_TYPE_WEAPON "Weapon"
 #define AURA_TYPE_THROWN "Thrown"
 #define AURA_TYPE_LIFE   "Life"
+
+#define SPECIES_BLOOD_DEFAULT 560
+
+#define SLIME_EVOLUTION_THRESHOLD 10
+
+//Used in mob/proc/get_input
+#define MOB_INPUT_TEXT "text"
+#define MOB_INPUT_MESSAGE "message"
+#define MOB_INPUT_NUM "num"
+
+#define MOB_CLIMB_TIME_SMALL 30
+#define MOB_CLIMB_TIME_MEDIUM 50
+
+#define MOB_FACTION_NEUTRAL "neutral"
