@@ -5,9 +5,9 @@
 
 #define START_PROCESSING_IN_LIST(Datum, List) \
 if (Datum.is_processing) {\
-	if(Datum.is_processing != #Processor)\
+	if(Datum.is_processing != "SSmachines.[#List]")\
 	{\
-		crash_with("Failed to start processing. [log_info_line(Datum)] is already being processed by [Datum.is_processing] but queue attempt occured on [#Processor]."); \
+		crash_with("Failed to start processing. [log_info_line(Datum)] is already being processed by [Datum.is_processing] but queue attempt occured on SSmachines.[#List]."); \
 	}\
 } else {\
 	Datum.is_processing = "SSmachines.[#List]";\
@@ -34,11 +34,11 @@ if(Datum.is_processing) {\
 
 SUBSYSTEM_DEF(machines)
 	name = "Machines"
+	init_order = SS_INIT_MACHINES
 	priority = SS_PRIORITY_MACHINERY
-	init_order = INIT_ORDER_MACHINES
 	flags = SS_KEEP_TIMING
 	runlevels = RUNLEVEL_GAME|RUNLEVEL_POSTGAME
-	
+
 	var/current_step = SSMACHINES_PIPENETS
 
 	var/cost_pipenets      = 0
@@ -50,10 +50,11 @@ SUBSYSTEM_DEF(machines)
 	var/list/machinery     = list()
 	var/list/powernets     = list()
 	var/list/power_objects = list()
-	var/list/all_machinery = list()
 
 	var/list/processing
 	var/list/current_run = list()
+
+	var/list/gravity_generators = list()
 
 /datum/controller/subsystem/machines/PreInit()
 	 processing = machinery
@@ -89,11 +90,10 @@ if(current_step == this_step || (check_resumed && !resumed)) {\
 // rebuild all power networks from scratch - only called at world creation or by the admin verb
 // The above is a lie. Turbolifts also call this proc.
 /datum/controller/subsystem/machines/proc/makepowernets()
-	for(var/powernet in powernets)
-		var/datum/powernet/PN = powernet
+	for(var/datum/powernet/PN in powernets)
 		qdel(PN)
 	powernets.Cut()
-	setup_powernets_for_cables(global.cable_list)
+	setup_powernets_for_cables(cable_list)
 
 /datum/controller/subsystem/machines/proc/setup_powernets_for_cables(list/cables)
 	for(var/obj/structure/cable/PC in cables)
@@ -214,5 +214,5 @@ datum/controller/subsystem/machines/proc/setup_atmos_machinery(list/machines)
 
 #undef SSMACHINES_PIPENETS
 #undef SSMACHINES_MACHINERY
-#undef SSMACHINES_POWER
-#undef SSMACHINES_power_objects
+#undef SSMACHINES_POWERNETS
+#undef SSMACHINES_POWER_OBJECTS

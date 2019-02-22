@@ -1,6 +1,6 @@
 SUBSYSTEM_DEF(mapping)
 	name = "Mapping"
-	init_order = INIT_ORDER_MAPPING
+	init_order = SS_INIT_MAPPING
 	flags = SS_NO_FIRE
 
 	var/list/map_templates = list()
@@ -9,8 +9,13 @@ SUBSYSTEM_DEF(mapping)
 	var/list/exoplanet_ruins_templates = list()
 	var/list/away_sites_templates = list()
 
+	var/list/submaps = list()
+	var/list/submap_archetypes = list()
+
 /datum/controller/subsystem/mapping/Initialize(timeofday)
 	preloadTemplates()
+	for(var/atype in subtypesof(/decl/submap_archetype))
+		submap_archetypes[atype] = new atype
 	GLOB.using_map.build_away_sites()
 	..()
 

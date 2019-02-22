@@ -1,31 +1,48 @@
 SUBSYSTEM_DEF(tgui)
-	name = "TGUI"
+	name = "tgui"
 	priority = SS_PRIORITY_TGUI
-	init_order = INIT_ORDER_TGUI
-	flags = SS_BACKGROUND
 	wait = 1 SECOND
-	var/list/tg_open_uis = list() // A list of open UIs, grouped by src_object and ui_key.
+	flags = SS_BACKGROUND|SS_POST_FIRE_TIMING
+
+	var/basehtml                     // The HTML base used for all UIs.
+	var/list/tg_open_uis = list()    // A list of open UIs, grouped by src_object and ui_key.
 	var/list/processing_uis = list() // A list of processing UIs, ungrouped.
-	var/basehtml // The HTML base used for all UIs.
+
+	var/tmp/list/current_run = list()
 
 /datum/controller/subsystem/tgui/Initialize()
-	basehtml = file2text('tgui/tgui.html') // Read the HTML from disk.
-	
-/datum/controller/subsystem/tgui/fire()
-	for(var/gui in processing_uis)
-		var/datum/tgui/ui = gui
-		if(ui && ui.user && ui.src_object)
-			ui.process()
-			CHECK_TICK
+	. = ..()
+	basehtml = file2text('tgui/tgui.html')
+
+/datum/controller/subsystem/tgui/fire(resumed = 0)
+	if (!resumed)
+		src.current_run = processing_uis.Copy()
+
+	var/list/current_run = src.current_run
+
+	while(current_run.len)
+		var/datum/tgui/ui = current_run[current_run.len]
+		current_run.len--
+
+		if(QDELETED(ui) || QDELETED(ui.user) || QDELETED(ui.src_object))
+			processing_uis -= ui
+			if (MC_TICK_CHECK)
+				return
 			continue
-		processing_uis.Remove(ui)
-		CHECK_TICK
+
+		ui.process() //not forced
+		if (MC_TICK_CHECK)
+			return
 
 /datum/controller/subsystem/tgui/stat_entry()
-	..("[processing_uis.len] UIs")
+	..("UI:[tg_open_uis.len], P:[processing_uis.len]")
+
+/datum/controller/subsystem/tgui/VV_hidden()
+	. = ..()
+	. += list("basehtml")
 
  /**
-  * tgui process
+  * tgui subsystem
   *
   * Contains all tgui state and process code.
  **/

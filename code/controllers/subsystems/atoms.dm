@@ -5,18 +5,16 @@
 
 SUBSYSTEM_DEF(atoms)
 	name = "Atoms"
-	init_order = INIT_ORDER_ATOMS
+	init_order = SS_INIT_ATOMS
 	flags = SS_NO_FIRE
 
-	var/initialized = INITIALIZATION_INSSATOMS
 	var/old_initialized
 
 	var/list/late_loaders
-	var/list/created_atoms
+	var/list/created_atoms = list()
+	var/list/atoms_to_init
 
 	var/list/BadInitializeCalls = list()
-
-	var/last_atom = null
 
 /datum/controller/subsystem/atoms/Initialize(timeofday)
 	initialized = INITIALIZATION_INNEW_MAPLOAD
@@ -30,29 +28,28 @@ SUBSYSTEM_DEF(atoms)
 	initialized = INITIALIZATION_INNEW_MAPLOAD
 
 	LAZYINITLIST(late_loaders)
-	LAZYINITLIST(created_atoms)
 
-	var/count
 	var/list/mapload_arg = list(TRUE)
-	if(atoms)
-		count = atoms.len
-		for(var/I in atoms)
-			var/atom/A = I
-			if(!A.initialized)
-				last_atom = A.type
-				InitAtom(I, mapload_arg)
-				CHECK_TICK
-	else
-		count = 0
-		for(var/atom in world)
-			var/atom/A = atom
-			if(!A.initialized)
-				last_atom = A.type
+	atoms_to_init = atoms || created_atoms
+
+	var/count = atoms_to_init.len
+	while(atoms_to_init.len)
+		var/atom/A = atoms_to_init[atoms_to_init.len]
+		var/list/arguments = mapload_arg + atoms_to_init[A]
+		atoms_to_init.len--
+		if(!(A.atom_flags & ATOM_FLAG_INITIALIZED))
+			InitAtom(A, arguments)
+			CHECK_TICK
+
+	if(!atoms)
+		for(var/atom/A in world)
+			if(!(A.atom_flags & ATOM_FLAG_INITIALIZED))
 				InitAtom(A, mapload_arg)
 				++count
 				CHECK_TICK
 
-	report_progress("Initialized [count] atoms")
+	report_progress("Initialized [count] atom\s")
+	pass(count)
 
 	initialized = INITIALIZATION_INNEW_REGULAR
 
@@ -60,8 +57,7 @@ SUBSYSTEM_DEF(atoms)
 		for(var/I in late_loaders)
 			var/atom/A = I
 			A.LateInitialize(arglist(mapload_arg))
-			CHECK_TICK
-		report_progress("Late initialized [late_loaders.len] atoms")
+		report_progress("Late initialized [late_loaders.len] atom\s")
 		late_loaders.Cut()
 
 /datum/controller/subsystem/atoms/proc/InitAtom(atom/A, list/arguments)
@@ -85,7 +81,7 @@ SUBSYSTEM_DEF(atoms)
 				if(arguments[1])	//mapload
 					late_loaders += A
 				else
-					A.LateInitialize()
+					A.LateInitialize(arglist(arguments))
 			if(INITIALIZE_HINT_QDEL)
 				qdel(A)
 				qdeleted = TRUE
@@ -94,7 +90,7 @@ SUBSYSTEM_DEF(atoms)
 
 	if(!A)	//possible harddel
 		qdeleted = TRUE
-	else if(!A.initialized)
+	else if(!(A.atom_flags & ATOM_FLAG_INITIALIZED))
 		BadInitializeCalls[the_type] |= BAD_INIT_DIDNT_INIT
 
 	return qdeleted || QDELING(A)

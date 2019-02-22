@@ -1,20 +1,39 @@
 SUBSYSTEM_DEF(trade)
 	name = "Trade"
-	priority = SS_PRIORITY_TRADE
-	init_order = INIT_ORDER_TRADE
-	flags = SS_NO_INIT|SS_BACKGROUND
 	wait = 1 MINUTE
+	priority = SS_PRIORITY_TRADE
+	//Initializes at default time
 
-/datum/controller/subsystem/trade/fire()
-	for(var/a in GLOB.traders)
-		var/datum/trader/T = a
+	var/list/traders = list()
+	var/tmp/list/current_traders
+	var/max_traders = 10
+
+/datum/controller/subsystem/trade/Initialize()
+	. = ..()
+	for(var/i in 1 to rand(1,3))
+		generate_trader(1)
+
+/datum/controller/subsystem/trade/fire(resumed = FALSE)
+	if (!resumed)
+		current_traders = traders.Copy()
+
+	while(current_traders.len)
+		var/datum/trader/T = current_traders[current_traders.len]
+		current_traders.len--
+
 		if(!T.tick())
-			GLOB.traders -= T
+			traders -= T
 			qdel(T)
-	if(prob(100-GLOB.traders.len*10))
-		generateTrader()
+		if (MC_TICK_CHECK)
+			return
 
-/datum/controller/subsystem/trade/proc/generateTrader(var/stations = 0)
+	if((traders.len <= max_traders) && prob(100 - 50 * traders.len / max_traders))
+		generate_trader()
+
+/datum/controller/subsystem/trade/stat_entry()
+	..("Traders: [traders.len]")
+
+/datum/controller/subsystem/trade/proc/generate_trader(var/stations = 0)
 	var/list/possible = list()
 	if(stations)
 		possible += subtypesof(/datum/trader) - typesof(/datum/trader/ship)
@@ -27,11 +46,11 @@ SUBSYSTEM_DEF(trade)
 	for(var/i in 1 to 10)
 		var/type = pick(possible)
 		var/bad = 0
-		for(var/trader in GLOB.traders)
+		for(var/trader in traders)
 			if(istype(trader,type))
 				bad = 1
 				break
 		if(bad)
 			continue
-		GLOB.traders += new type
+		traders += new type
 		return

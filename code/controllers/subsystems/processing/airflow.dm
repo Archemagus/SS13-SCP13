@@ -14,15 +14,8 @@ PROCESSING_SUBSYSTEM_DEF(airflow)
 	flags = SS_NO_INIT
 	priority = SS_PRIORITY_AIRFLOW
 
-#define AIRFLOW_DISABLED
+
 /datum/controller/subsystem/processing/airflow/fire(resumed = FALSE)
-
-	#ifdef AIRFLOW_DISABLED
-	return 
-	#endif 
-
-#undef AIRFLOW_DISABLED
-	
 	if (!resumed)
 		current_run = processing.Copy()	// Defined in parent.
 
@@ -31,6 +24,15 @@ PROCESSING_SUBSYSTEM_DEF(airflow)
 	while (curr.len)
 		var/atom/movable/target = curr[curr.len]
 		curr.len--
+
+		if(QDELETED(target))
+			if (target)
+				CLEAR_OBJECT(target)
+			else
+				processing -= target
+			if (MC_TICK_CHECK)
+				return
+			continue
 
 		if (target.airflow_speed <= 0)
 			CLEAR_OBJECT(target)
@@ -45,7 +47,7 @@ PROCESSING_SUBSYSTEM_DEF(airflow)
 			continue
 		else if (target.airflow_process_delay)
 			target.airflow_process_delay = 0
-		
+
 		target.airflow_speed = min(target.airflow_speed, 15)
 		target.airflow_speed -= vsc.airflow_speed_decay
 		if (!target.airflow_skip_speedcheck)
@@ -87,15 +89,16 @@ PROCESSING_SUBSYSTEM_DEF(airflow)
 			if (MC_TICK_CHECK)
 				return
 			continue
-		
+
 		step_towards(target, target.airflow_dest)
-		if (ismob(target) && target:client)
-			target:setMoveCooldown(vsc.airflow_mob_slowdown)
+		if (ismob(target))
+			var/mob/M = target
+			M.SetMoveCooldown(vsc.airflow_mob_slowdown)
 
 		if (MC_TICK_CHECK)
 			return
 
-#undef CLEAR_OBJECT		
+#undef CLEAR_OBJECT
 
 /atom/movable
 	var/tmp/airflow_xo
@@ -126,9 +129,9 @@ PROCESSING_SUBSYSTEM_DEF(airflow)
 	if (airflow_falloff < 1)
 		airflow_dest = null
 		return FALSE
-	
-	airflow_speed = min(max(n * (9 / airflow_falloff), 1), 9)	
-	
+
+	airflow_speed = min(max(n * (9 / airflow_falloff), 1), 9)
+
 	airflow_od = 0
 
 	if (!density)
@@ -151,7 +154,7 @@ PROCESSING_SUBSYSTEM_DEF(airflow)
 /atom/movable/proc/RepelAirflowDest(n)
 	if (!prepare_airflow(n))
 		return
-	
+
 	airflow_xo = -(airflow_dest.x - src.x)
 	airflow_yo = -(airflow_dest.y - src.y)
 

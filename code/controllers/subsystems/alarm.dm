@@ -10,7 +10,7 @@ SUBSYSTEM_DEF(alarm)
 	name = "Alarm"
 	wait = 2 SECONDS
 	priority = SS_PRIORITY_ALARM
-	init_order = INIT_ORDER_ALARM
+	init_order = SS_INIT_ALARM
 	var/list/datum/alarm/all_handlers
 	var/tmp/list/current = list()
 	var/tmp/list/active_alarm_cache = list()

@@ -1,16 +1,16 @@
-#define EVAC_OPT_ABANDON_SITE "abandon_site"
-#define EVAC_OPT_CANCEL_ABANDON_SITE "cancel_abandon_site"
+#define EVAC_OPT_ABANDON_SHIP "abandon_ship"
+#define EVAC_OPT_CANCEL_ABANDON_SHIP "cancel_abandon_ship"
 
 /datum/evacuation_controller/lifepods
-	name = "evacuation controller"
+	name = "escape pod controller"
 
 	evac_prep_delay    = 7 MINUTES
 	evac_launch_delay  = 0
 	evac_transit_delay = 2 MINUTES
 
 	evacuation_options = list(
-		EVAC_OPT_ABANDON_SITE = new /datum/evacuation_option/abandon_site(),
-		EVAC_OPT_CANCEL_ABANDON_SITE = new /datum/evacuation_option/cancel_abandon_site(),
+		EVAC_OPT_ABANDON_SHIP = new /datum/evacuation_option/abandon_ship(),
+		EVAC_OPT_CANCEL_ABANDON_SHIP = new /datum/evacuation_option/cancel_abandon_ship(),
 	)
 
 /datum/evacuation_controller/lifepods/launch_evacuation()
@@ -20,9 +20,9 @@
 	if (is_on_cooldown())
 		return list()
 	if (is_idle())
-		return list(evacuation_options[EVAC_OPT_ABANDON_SITE])
+		return list(evacuation_options[EVAC_OPT_ABANDON_SHIP])
 	if (is_evacuating())
-		return list(evacuation_options[EVAC_OPT_CANCEL_ABANDON_SITE])
+		return list(evacuation_options[EVAC_OPT_CANCEL_ABANDON_SHIP])
 
-#undef EVAC_OPT_ABANDON_SITE
-#undef EVAC_OPT_CANCEL_ABANDON_SITE
+#undef EVAC_OPT_ABANDON_SHIP
+#undef EVAC_OPT_CANCEL_ABANDON_SHIP

@@ -4,6 +4,9 @@ var/list/gamemode_cache = list()
 	var/server_name = null				// server name (for world name / status)
 	var/server_suffix = 0				// generate numeric suffix based on server port
 
+	var/ooc_during_round = 0
+	var/emojis = 1
+
 	var/log_ooc = 0						// log OOC channel
 	var/log_access = 0					// log login/logout
 	var/log_say = 0						// log client say
@@ -16,6 +19,7 @@ var/list/gamemode_cache = list()
 	var/log_attack = 0					// log attack messages
 	var/log_adminchat = 0				// log admin chat messages
 	var/log_adminwarn = 0				// log warnings admins get about bomb construction and such
+	var/log_permissions = 0				// log permissions changes
 	var/log_pda = 0						// log pda messages
 	var/log_hrefs = 0					// logs all links clicked in-game. Could be used for debugging and tracking down exploits
 	var/log_runtime = 0					// logs world.log to a file
@@ -31,16 +35,17 @@ var/list/gamemode_cache = list()
 	var/vote_delay = 6000				// minimum time between voting sessions (deciseconds, 10 minute default)
 	var/vote_period = 600				// length of voting period (deciseconds, default 1 minute)
 	var/vote_autotransfer_initial = 108000 // Length of time before the first autotransfer vote is called
-	var/vote_autotransfer_interval = 36000 // length of time before next sequential autotransfer vote
+	var/vote_autotransfer_interval = 18000 // length of time before next sequential autotransfer vote
 	var/vote_autogamemode_timeleft = 100 //Length of time before round start when autogamemode vote is called (in seconds, default 100).
 	var/vote_no_default = 0				// vote does not default to nochange/norestart (tbi)
 	var/vote_no_dead = 0				// dead people can't vote (tbi)
+	var/vote_no_dead_crew_transfer = 0	// dead people can't vote on crew transfer votes
 //	var/enable_authentication = 0		// goon authentication
 	var/del_new_on_log = 1				// del's new players if they log before they spawn in
 	var/feature_object_spell_system = 0 //spawns a spellbook which gives object-type spells instead of verb-type spells for the wizard
 	var/traitor_scaling = 0 			//if amount of traitors scales based on amount of players
 	var/objectives_disabled = 0 			//if objectives are disabled or not
-	var/protect_roles_from_antagonist = 1// If security and such can be traitor/cult/other
+	var/protect_roles_from_antagonist = 0// If security and such can be traitor/cult/other
 	var/continous_rounds = 0			// Gamemodes which end instantly will instead keep on going until the round ends by escape shuttle or nuke.
 	var/allow_Metadata = 0				// Metadata is supported.
 	var/popup_admin_pm = 0				//adminPMs to non-admins show in a pop-up 'reply' window when set to 1.
@@ -58,6 +63,7 @@ var/list/gamemode_cache = list()
 	var/allow_ai = 1					// allow ai job
 	var/hostedby = null
 	var/respawn_delay = 30
+	var/observe_delay = 0
 	var/guest_jobban = 1
 	var/usewhitelist = 0
 	var/kick_inactive = 0				//force disconnect for inactive players after this many minutes, if non-0
@@ -77,10 +83,10 @@ var/list/gamemode_cache = list()
 
 	var/max_maint_drones = 5				//This many drones can spawn,
 	var/allow_drone_spawn = 1				//assuming the admin allow them to.
-	var/drone_build_time = 1200				//A drone will become available every X ticks since last drone spawn. Default is 2 minutes.
+	var/drone_build_time = 9000				//A drone will become available every X ticks since last drone spawn. Default is 2 minutes.
 
 	var/disable_player_mice = 0
-	var/uneducated_mice = 0 //Set to 1 to prevent newly-spawned mice from understanding human speech
+	var/uneducated_mice = 1 //Set to 1 to prevent newly-spawned mice from understanding human speech
 
 	var/usealienwhitelist = 0
 	var/usealienwhitelistSQL = 0;
@@ -96,12 +102,14 @@ var/list/gamemode_cache = list()
 	var/wikiurl
 	var/forumurl
 	var/githuburl
+	var/issuereporturl
 
 	var/forbid_singulo_possession = 0
 
 	//game_options.txt configs
 
 	var/health_threshold_dead = -100
+	var/health_threshold_crit = -50
 
 	var/organ_health_multiplier = 0.9
 	var/organ_regeneration_multiplier = 0.25
@@ -136,7 +144,7 @@ var/list/gamemode_cache = list()
 	var/alien_delay = 0
 	var/slime_delay = 0
 	var/animal_delay = 0
-	var/maximum_mushrooms = 15 //After this amount alive, mushrooms will not boom boom
+	var/maximum_mushrooms = 8 //After this amount alive, mushrooms will not boom boom
 
 
 	var/admin_legacy_system = 0	//Defines whether the server uses the legacy admin system with admins.txt or the SQL system. Config option in config.txt
@@ -154,6 +162,7 @@ var/list/gamemode_cache = list()
 
 	var/comms_password = ""
 	var/ban_comms_password = null
+	var/list/forbidden_versions = list() // Clients with these byond versions will be autobanned. Format: string "byond_version.byond_build"; separate with ; in config, e.g. 512.1234;512.1235
 
 	var/login_export_addr = null
 
@@ -165,6 +174,11 @@ var/list/gamemode_cache = list()
 	var/main_irc = ""
 	var/admin_irc = ""
 	var/announce_shuttle_dock_to_irc = FALSE
+
+
+	// Discord crap.
+	var/discord_url
+	var/discord_password
 
 	// Event settings
 	var/expected_round_length = 3 * 60 * 60 * 10 // 3 hours
@@ -185,9 +199,9 @@ var/list/gamemode_cache = list()
 	var/ooc_allowed = 1
 	var/looc_allowed = 1
 	var/dooc_allowed = 1
-	var/donator_ooc_allowed = 1
 	var/dsay_allowed = 1
 	var/aooc_allowed = 1
+	var/ahelp_allowed = 1
 
 	var/starlight = 0	// Whether space turfs have ambient light or not
 
@@ -216,7 +230,9 @@ var/list/gamemode_cache = list()
 	var/error_silence_time = 6000 // How long a unique error will be silenced for
 	var/error_msg_delay = 50 // How long to wait between messaging admins about occurrences of a unique error
 
-	var/max_gear_cost = 10 // Used in chargen for accessory loadout limit. 0 disables loadout, negative allows infinite points.
+	var/max_gear_cost = 15 // Used in chargen for accessory loadout limit. 0 disables loadout, negative allows infinite points.
+
+	var/allow_ic_printing = TRUE //Whether players should be allowed to print IC circuits from scripts.
 
 /datum/configuration/New()
 	var/list/L = typesof(/datum/game_mode) - /datum/game_mode
@@ -283,6 +299,12 @@ var/list/gamemode_cache = list()
 				if ("use_recursive_explosions")
 					use_recursive_explosions = 1
 
+				if ("ooc_during_round")
+					ooc_during_round = 1
+
+				if("emojis")
+					config.emojis = 1
+
 				if ("log_ooc")
 					config.log_ooc = 1
 
@@ -325,6 +347,9 @@ var/list/gamemode_cache = list()
 				if ("log_adminwarn")
 					config.log_adminwarn = 1
 
+				if ("log_permissions")
+					config.log_permissions = 1
+
 				if ("log_pda")
 					config.log_pda = 1
 
@@ -336,6 +361,10 @@ var/list/gamemode_cache = list()
 
 				if ("log_runtime")
 					config.log_runtime = 1
+					var/newlog = file("data/logs/runtimes/runtime-[time2text(world.realtime, "YYYY-MM-DD")].log")
+					if(runtime_diary != newlog)
+						to_world_log("Now logging runtimes to data/logs/runtimes/runtime-[time2text(world.realtime, "YYYY-MM-DD")].log")
+						runtime_diary = newlog
 
 				if ("generate_asteroid")
 					config.generate_map = 1
@@ -363,6 +392,9 @@ var/list/gamemode_cache = list()
 
 				if ("no_dead_vote")
 					config.vote_no_dead = 1
+
+				if ("no_dead_vote_crew_transfer")
+					config.vote_no_dead_crew_transfer = 1
 
 				if ("default_no_vote")
 					config.vote_no_default = 1
@@ -422,6 +454,9 @@ var/list/gamemode_cache = list()
 				if ("githuburl")
 					config.githuburl = value
 
+				if ("issuereporturl")
+					config.issuereporturl = value
+
 				if ("ghosts_can_possess_animals")
 					config.ghosts_can_possess_animals = value
 
@@ -433,6 +468,8 @@ var/list/gamemode_cache = list()
 
 				if ("disable_ooc")
 					config.ooc_allowed = 0
+
+				if ("disable_looc")
 					config.looc_allowed = 0
 
 				if ("disable_aooc")
@@ -446,9 +483,6 @@ var/list/gamemode_cache = list()
 
 				if ("disable_dsay")
 					config.dsay_allowed = 0
-
-				if("disable_dooc")
-					config.donator_ooc_allowed = 0
 
 				if ("disable_respawn")
 					config.abandon_allowed = 0
@@ -594,6 +628,9 @@ var/list/gamemode_cache = list()
 				if("ban_comms_password")
 					config.ban_comms_password = value
 
+				if("forbidden_versions")
+					config.forbidden_versions = splittext(value, ";")
+
 				if("login_export_addr")
 					config.login_export_addr = value
 
@@ -635,6 +672,9 @@ var/list/gamemode_cache = list()
 
 				if("disable_welder_vision")
 					config.welder_vision = 0
+
+				if("disable_circuit_printing")
+					config.allow_ic_printing = FALSE
 
 				if("allow_extra_antags")
 					config.allow_extra_antags = 1
@@ -706,6 +746,11 @@ var/list/gamemode_cache = list()
 				if("error_msg_delay")
 					error_msg_delay = text2num(value)
 
+				if("discord_url")
+					discord_url = value
+				if("discord_password")
+					discord_password = value
+
 				if("max_gear_cost")
 					max_gear_cost = text2num(value)
 					if(max_gear_cost < 0)
@@ -720,6 +765,8 @@ var/list/gamemode_cache = list()
 					radiation_lower_limit = text2num(value)
 				if("player_limit")
 					player_limit = text2num(value)
+				if("hub")
+					world.update_hub_visibility()
 
 				else
 					log_misc("Unknown setting in configuration: '[name]'")
@@ -732,6 +779,8 @@ var/list/gamemode_cache = list()
 			switch(name)
 				if("health_threshold_dead")
 					config.health_threshold_dead = value
+				if("health_threshold_crit")
+					config.health_threshold_crit = value
 				if("revival_pod_plants")
 					config.revival_pod_plants = value
 				if("revival_cloning")
@@ -835,14 +884,13 @@ var/list/gamemode_cache = list()
 		var/datum/game_mode/M = gamemode_cache[game_mode]
 		if (M.config_tag && M.config_tag == mode_name)
 			return M
-	return gamemode_cache["extended"]
 
 /datum/configuration/proc/get_runnable_modes()
 	var/list/runnable_modes = list()
 	for(var/game_mode in gamemode_cache)
 		var/datum/game_mode/M = gamemode_cache[game_mode]
 		if(M && !M.startRequirements() && !isnull(config.probabilities[M.config_tag]) && config.probabilities[M.config_tag] > 0)
-			runnable_modes |= M
+			runnable_modes[M.config_tag] = config.probabilities[M.config_tag]
 	return runnable_modes
 
 /datum/configuration/proc/load_event(filename)
