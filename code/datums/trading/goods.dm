@@ -157,7 +157,7 @@
 	possible_origins = list("Baldie's Hats and Accessories", "The Right Fit", "Like a Glove", "Space Fashion")
 	possible_trading_items = list(/obj/item/clothing/accessory            = TRADER_ALL,
 								/obj/item/clothing/accessory/badge        = TRADER_BLACKLIST_ALL,
-								/obj/item/clothing/accessory/holster      = TRADER_BLACKLIST_ALL,
+								/obj/item/clothing/accessory/storage/holster      = TRADER_BLACKLIST_ALL,
 								/obj/item/clothing/accessory/medal        = TRADER_BLACKLIST_ALL,
 								/obj/item/clothing/accessory/storage      = TRADER_BLACKLIST_ALL,
 								/obj/item/clothing/gloves                 = TRADER_SUBTYPES_ONLY,
@@ -213,7 +213,7 @@ Sells devices, odds and ends, and medical stuff
 								/obj/item/device/t_scanner                 = TRADER_THIS_TYPE,
 								/obj/item/device/taperecorder              = TRADER_THIS_TYPE,
 								/obj/item/device/batterer                  = TRADER_THIS_TYPE,
-								/obj/item/device/violin                    = TRADER_THIS_TYPE,
+								/obj/item/device/synthesized_instrument/violin                    = TRADER_THIS_TYPE,
 								/obj/item/device/hailer                    = TRADER_THIS_TYPE,
 								/obj/item/device/uv_light                  = TRADER_THIS_TYPE,
 								/obj/item/device/mmi                       = TRADER_ALL,
@@ -312,8 +312,7 @@ Sells devices, odds and ends, and medical stuff
 								/mob/living/simple_animal/hostile/retaliate/beast/samak= TRADER_THIS_TYPE,
 								/mob/living/simple_animal/hostile/carp = TRADER_THIS_TYPE)
 
-	possible_trading_items = list(/mob/living/simple_animal/hostile/carp= TRADER_THIS_TYPE,
-								/obj/item/device/dociler              = TRADER_THIS_TYPE,
+	possible_trading_items = list(/obj/item/device/dociler              = TRADER_THIS_TYPE,
 								/obj/item/weapon/beartrap			  = TRADER_THIS_TYPE,
 								/obj/item/device/slime_scanner = TRADER_THIS_TYPE)
 

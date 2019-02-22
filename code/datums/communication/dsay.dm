@@ -30,6 +30,9 @@
 		if(!speech_method.can_receive(communicator, M))
 			continue
 		var/sent_message = speech_method.get_message(communicator, M, message)
+		sent_message = emoji_parse(sent_message)
+//		if(communicator.holder)
+//			sent_message = emoji_parse(sent_message)
 		receive_communication(communicator, M, "<span class='deadsay'>" + create_text_tag("dead", "DEAD:", M.client) + " [sent_message]</span>")
 
 /decl/dsay_communication/proc/can_communicate(var/client/communicator, var/message)
@@ -76,10 +79,11 @@
 	var/mob/observer/ghost/DM
 	if(isghost(C.mob))
 		DM = C.mob
+	var/anonsay_pref = (DM.client.get_preference_value(/datum/client_preference/anon_say) == GLOB.PREF_YES)
 	if(M.client.holder) 							// What admins see
-		lname = "[keyname][(DM && DM.anonsay) ? "*" : (DM ? "" : "^")] ([name])"
+		lname = "[keyname][(DM && anonsay_pref) ? "*" : (DM ? "" : "^")] ([name])"
 	else
-		if(DM && DM.anonsay)						// If the person is actually observer they have the option to be anonymous
+		if(DM && anonsay_pref)						// If the person is actually observer they have the option to be anonymous
 			lname = "Ghost of [name]"
 		else if(DM)									// Non-anons
 			lname = "[keyname] ([name])"

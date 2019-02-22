@@ -17,8 +17,8 @@
 		return FALSE
 
 /decl/communication_channel/ooc/looc/do_communicate(var/client/C, var/message)
-	var/mob/M = C.mob
-	var/list/listening_hosts = looc_view(M)
+	var/mob/M = C.mob ? C.mob.get_looc_mob() : null
+	var/list/listening_hosts = hosts_in_view_range(M)
 	var/list/listening_clients = list()
 
 	var/key = C.key
@@ -26,24 +26,31 @@
 	for(var/listener in listening_hosts)
 		var/mob/listening_mob = listener
 		var/client/t = listening_mob.get_client()
-		if(!t || t in listening_clients)
+		if(!t)
 			continue
-		listening_clients += t
+		listening_clients |= t
 		var/received_message = t.receive_looc(C, key, message, listening_mob.looc_prefix())
+		received_message = emoji_parse(received_message)
+//		if(C.holder)
+//			received_message = emoji_parse(received_message)
 		receive_communication(C, t, received_message)
 
 	for(var/client/adm in GLOB.admins)	//Now send to all admins that weren't in range.
 		if(!(adm in listening_clients) && adm.get_preference_value(/datum/client_preference/staff/show_rlooc) == GLOB.PREF_SHOW)
 			var/received_message = adm.receive_looc(C, key, message, "R")
+			received_message = emoji_parse(received_message)
+//			if(C.holder)
+//				received_message = emoji_parse(received_message)
 			receive_communication(C, adm, received_message)
 
 /client/proc/receive_looc(var/client/C, var/commkey, var/message, var/prefix)
 	var/mob/M = C.mob
-	var/display_name = isghost(M) ? commkey : M.name
+	var/anonsay_pref = C.get_preference_value(/datum/client_preference/anon_say) == GLOB.PREF_YES ? M.name : commkey
+	var/display_name = isghost(M) ? anonsay_pref : M.name
 	var/admin_stuff = holder ? "/([commkey])" : ""
 	if(prefix)
 		prefix = "\[[prefix]\] "
-	return "<span class='ooc'><span class='looc'>" + create_text_tag("looc", "LOOC:", src) + " <span class='prefix'>[prefix]</span><strong>[display_name][admin_stuff]:</strong> <span class='message'>[message]</span></span></span>"
+	return "<span class='ooc'><span class='looc'>" + create_text_tag("looc", "LOOC:", src) + " <span class='prefix'>[prefix]</span><EM>[display_name][admin_stuff]:</EM> <span class='message'>[message]</span></span></span>"
 
 /mob/proc/looc_prefix()
 	return eyeobj ? "Body" : ""
@@ -51,15 +58,11 @@
 /mob/observer/eye/looc_prefix()
 	return "Eye"
 
+/mob/proc/get_looc_mob()
+	return src
+
 /mob/living/silicon/ai/get_looc_mob()
 	if(!eyeobj)
 		return src
 	return eyeobj
 
-/mob/proc/get_looc_mob()
-	return src
-
-/proc/looc_view(var/atom/movable/center)
-	. = list()
-	for (var/mob/M in viewers(world.view, center))
-		. += M

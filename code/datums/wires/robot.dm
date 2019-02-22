@@ -2,6 +2,13 @@
 	random = 1
 	holder_type = /mob/living/silicon/robot
 	wire_count = 5
+	descriptions = list(
+		new /datum/wire_description(BORG_WIRE_LAWCHECK, "This wire runs to the unit's law module."),
+		new /datum/wire_description(BORG_WIRE_MAIN_POWER, "This wire seems to be carrying a heavy current.", SKILL_EXPERT),
+		new /datum/wire_description(BORG_WIRE_LOCKED_DOWN, "This wire connects to the unit's safety override."),
+		new /datum/wire_description(BORG_WIRE_AI_CONTROL, "This wire connects to automated control systems."),
+		new /datum/wire_description(BORG_WIRE_CAMERA,  "This wire runs to the unit's vision modules.")
+	)
 
 var/const/BORG_WIRE_LAWCHECK = 1
 var/const/BORG_WIRE_MAIN_POWER = 2 // The power wires do nothing whyyyyyyyyyyyyy
@@ -9,7 +16,7 @@ var/const/BORG_WIRE_LOCKED_DOWN = 4
 var/const/BORG_WIRE_AI_CONTROL = 8
 var/const/BORG_WIRE_CAMERA = 16
 
-/datum/wires/robot/GetInteractWindow()
+/datum/wires/robot/GetInteractWindow(mob/user)
 
 	. = ..()
 	var/mob/living/silicon/robot/R = holder
@@ -39,10 +46,6 @@ var/const/BORG_WIRE_CAMERA = 16
 		if (BORG_WIRE_CAMERA)
 			if(!isnull(R.camera) && !R.scrambledcodes)
 				R.camera.status = mended
-
-		if(BORG_WIRE_LAWCHECK)	//Forces a law update if the borg is set to receive them. Since an update would happen when the borg checks its laws anyway, not much use, but eh
-			if (R.lawupdate)
-				R.lawsync()
 
 		if(BORG_WIRE_LOCKED_DOWN)
 			R.SetLockdown(!mended)
@@ -75,3 +78,19 @@ var/const/BORG_WIRE_CAMERA = 16
 
 /datum/wires/robot/proc/LockedCut()
 	return wires_status & BORG_WIRE_LOCKED_DOWN
+
+/datum/wires/robot/SolveWireFunction(var/function)
+	var/sf = ""
+	switch(function)
+		if(BORG_WIRE_LAWCHECK)
+			sf = "Port A"
+		if(BORG_WIRE_MAIN_POWER)
+			sf = "Port B"
+		if(BORG_WIRE_LOCKED_DOWN)
+			sf = "Port C"
+		if(BORG_WIRE_AI_CONTROL)
+			sf = "Port D"
+		if(BORG_WIRE_CAMERA)
+			sf = "Port E"
+
+	return sf

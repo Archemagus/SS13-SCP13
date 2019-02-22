@@ -1,7 +1,7 @@
 /datum/trader/ship/vox
-	typical_duration = 15
+	typical_duration = 60
 	origin = "UNREGISTERED VESSEL"
-	name_language = "Vox-pidgin"
+	name_language = LANGUAGE_VOX
 	compliment_increase = 0
 	trade_flags = TRADER_GOODS
 	var/hailed_vox = 0 //Whether we have been hailed by a vox. negatives mean pariah, positives mean regular.
@@ -14,6 +14,8 @@
 				"hail_Human0"        = "Hello hueman! Kiikikikiki! MOB trade with us, yes? Good!",
 				"hail_Human1"        = "Friend of Vox is friend of all Vox! MOB you trade now!",
 				"hail_Vox1"          = "SKREEEE! May the Shoal make this trade good, MOB!",
+				"hail_Resomi0"       = "Hello MOB! You tiny thing, how pilot ship? Maybe come for dinner! KIKIKIKI!",
+				"hail_Resomi1"       = "Greetings, MOB, be dinner or friend? KIKIKIKIKII!",
 				"hail_deny0"         = "Trade closed, GO AWAY!",
 				"hail_deny-1"        = "We no trade with shit like you!",
 				"hail_deny1"         = "Trade gone now. Goodbye.",

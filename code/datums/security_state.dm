@@ -13,8 +13,10 @@
 	var/decl/security_level/highest_standard_security_level
 
 	var/decl/security_level/current_security_level  // The current security level. Defaults to the first entry in all_security_levels if unset.
+	var/decl/security_level/stored_security_level   // The security level that we are escalating to high security from - we will return to this level once we choose to revert.
 	var/list/all_security_levels                    // List of all available security levels
 	var/list/standard_security_levels               // List of all normally selectable security levels
+	var/list/comm_console_security_levels           // List of all selectable security levels for the command and communication console - basically standard_security_levels - 1
 
 /decl/security_state/New()
 	// Setup the severe security level
@@ -53,6 +55,13 @@
 		standard_security_levels += security_level
 		if(security_level == highest_standard_security_level)
 			break
+
+	comm_console_security_levels = list()
+	// Setup the list of selectable security levels available in the comm. console
+	for(var/security_level in all_security_levels)
+		if(security_level == highest_standard_security_level)
+			break
+		comm_console_security_levels += security_level
 
 	// Now we ensure the high security level is not above the severe one (but we allow them to be equal)
 	var/severe_index = all_security_levels.Find(severe_security_level)
@@ -127,15 +136,17 @@
 	var/name
 
 	// These values are primarily for station alarms and status displays, and which light colors and overlays to use
-	var/light_range
-	var/light_power
+	var/light_max_bright = 0.5
+	var/light_inner_range = 0.1
+	var/light_outer_range = 1
 	var/light_color_alarm
 	var/light_color_status_display
 
 	var/overlay_alarm
 	var/overlay_status_display
 
-	var/crb = FALSE
+	var/up_description
+	var/down_description
 
 // Called when we're switching from a lower security level to this one.
 /decl/security_level/proc/switching_up_to()
@@ -161,8 +172,6 @@
 
 /decl/security_level/default
 	icon = 'icons/misc/security_state.dmi'
-	var/up_description
-	var/down_description
 
 	var/static/datum/announcement/priority/security/security_announcement_up = new(do_log = 0, do_newscast = 1, new_sound = sound('sound/misc/notice1.ogg'))
 	var/static/datum/announcement/priority/security/security_announcement_down = new(do_log = 0, do_newscast = 1, new_sound = sound('sound/misc/notice1.ogg'))
@@ -178,7 +187,7 @@
 	notify_station()
 
 /decl/security_level/default/proc/notify_station()
-	for(var/obj/machinery/firealarm/FA in SSmachines.all_machinery)
+	for(var/obj/machinery/firealarm/FA in SSmachines.machinery)
 		if(FA.z in GLOB.using_map.contact_levels)
 			FA.update_icon()
 	post_status("alert")
@@ -186,8 +195,9 @@
 /decl/security_level/default/code_green
 	name = "code green"
 
-	light_range = 2
-	light_power = 1
+	light_max_bright = 0.25
+	light_inner_range = 0.1
+	light_outer_range = 1
 
 	light_color_alarm = COLOR_GREEN
 	light_color_status_display = COLOR_GREEN
@@ -200,8 +210,9 @@
 /decl/security_level/default/code_blue
 	name = "code blue"
 
-	light_range = 2
-	light_power = 1
+	light_max_bright = 0.5
+	light_inner_range = 0.1
+	light_outer_range = 2
 	light_color_alarm = COLOR_BLUE
 	light_color_status_display = COLOR_BLUE
 
@@ -214,8 +225,9 @@
 /decl/security_level/default/code_red
 	name = "code red"
 
-	light_range = 4
-	light_power = 2
+	light_max_bright = 0.5
+	light_inner_range = 0.1
+	light_outer_range = 2
 	light_color_alarm = COLOR_RED
 	light_color_status_display = COLOR_RED
 
@@ -225,25 +237,20 @@
 	up_description = "There is an immediate serious threat to the station. Security may have weapons unholstered at all times. Random searches are allowed and advised."
 	down_description = "The self-destruct mechanism has been deactivated, there is still however an immediate serious threat to the station. Security may have weapons unholstered at all times, random searches are allowed and advised."
 
-	crb = TRUE 
-
 /decl/security_level/default/code_delta
 	name = "code delta"
 
-	light_range = 4
-	light_power = 2
+	light_max_bright = 0.75
+	light_inner_range = 0.1
+	light_outer_range = 3
 	light_color_alarm = COLOR_RED
 	light_color_status_display = COLOR_NAVY_BLUE
 
 	overlay_alarm = "alarm_delta"
 	overlay_status_display = "status_display_delta"
 
-	crb = TRUE
-
-	var/static/datum/announcement/priority/security/security_announcement_delta = new(do_log = 0, do_newscast = 1, new_sound = sound('sound/AI/announcer/delta.ogg'))
+	var/static/datum/announcement/priority/security/security_announcement_delta = new(do_log = 0, do_newscast = 1, new_sound = sound('sound/effects/siren.ogg'))
 
 /decl/security_level/default/code_delta/switching_up_to()
 	security_announcement_delta.Announce("Attention all personnel, security level Delta has been reached. The omega warhead is now armed, primed for detonation. All personnel are instructed to obey any and all instructions given by Foundation security personnel, or the respective heads of their department. Any violation of these orders will result in immediate termination of employment. Lethal force has been authorized. This is not a drill. Omega warhead detonation in T minus 15 minutes.", "Attention! Omega Warhead now live! This is not a drill!")
 	notify_station()
-
-

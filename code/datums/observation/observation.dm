@@ -202,16 +202,14 @@
 	return TRUE
 
 /decl/observ/proc/raise_event()
-	
 	// Sanity
-	if (!length(args))
+	if (!args.len)
 		return FALSE
 
 	// Call the global listeners.
-	for (var/L in global_listeners)
-		var/datum/listener = L
-
-		for (var/proc_call in global_listeners[listener])
+	for (var/datum/listener in global_listeners)
+		var/list/callbacks = global_listeners[listener]
+		for (var/proc_call in callbacks)
 
 			// If the callback crashes, record the error and remove it.
 			try
@@ -225,10 +223,9 @@
 	var/source = args[1]
 	if (source in event_sources)
 		var/list/listeners = event_sources[source]
-		for (var/L in listeners)
-			var/datum/listener = L
-			
-			for (var/proc_call in listeners[listener])
+		for (var/datum/listener in listeners)
+			var/list/callbacks = listeners[listener]
+			for (var/proc_call in callbacks)
 
 				// If the callback crashes, record the error and remove it.
 				try

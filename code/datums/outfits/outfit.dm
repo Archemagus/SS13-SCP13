@@ -17,7 +17,7 @@ var/list/outfits_decls_by_type_
 		return
 	outfits_decls_ = list()
 	outfits_decls_by_type_ = list()
-	outfits_decls_root_ = new/decl/hierarchy/outfit()
+	outfits_decls_root_ = decls_repository.get_decl(/decl/hierarchy/outfit)
 
 /decl/hierarchy/outfit
 	name = "Naked"
@@ -110,7 +110,7 @@ var/list/outfits_decls_by_type_
 	if(W)
 		rank = W.rank
 		assignment = W.assignment
-
+	equip_pda(H, rank, assignment, equip_adjustments)
 
 	for(var/path in backpack_contents)
 		var/number = backpack_contents[path]
@@ -165,7 +165,7 @@ var/list/outfits_decls_by_type_
 	if(r_hand)
 		H.put_in_r_hand(new r_hand(H))
 
-	if((flags & OUTFIT_HAS_BACKPACK))
+	if((flags & OUTFIT_HAS_BACKPACK) && !(OUTFIT_ADJUSTMENT_SKIP_BACKPACK & equip_adjustments))
 		var/decl/backpack_outfit/bo
 		var/metadata
 
@@ -175,21 +175,20 @@ var/list/outfits_decls_by_type_
 		else
 			bo = get_default_outfit_backpack()
 
-		if (bo)
-			var/override_type = backpack_overrides[bo.type]
-			var/backpack = bo.spawn_backpack(H, metadata, override_type)
+		var/override_type = backpack_overrides[bo.type]
+		var/backpack = bo.spawn_backpack(H, metadata, override_type)
 
-			if(backpack)
-				if(back)
-					if(!H.put_in_hands(backpack))
-						H.equip_to_appropriate_slot(backpack)
-				else
-					H.equip_to_slot_or_del(backpack, slot_back)
-/*
+		if(backpack)
+			if(back)
+				if(!H.put_in_hands(backpack))
+					H.equip_to_appropriate_slot(backpack)
+			else
+				H.equip_to_slot_or_del(backpack, slot_back)
+
 	if(H.species && !(OUTFIT_ADJUSTMENT_SKIP_SURVIVAL_GEAR & equip_adjustments))
 		H.species.equip_survival_gear(H, flags&OUTFIT_EXTENDED_SURVIVAL)
 	check_and_try_equip_xeno(H)
-*/
+
 /decl/hierarchy/outfit/proc/equip_id(var/mob/living/carbon/human/H, var/rank, var/assignment, var/equip_adjustments)
 	if(!id_slot || !id_type)
 		return
@@ -206,6 +205,14 @@ var/list/outfits_decls_by_type_
 	if(H.equip_to_slot_or_store_or_drop(W, id_slot))
 		return W
 
+/decl/hierarchy/outfit/proc/equip_pda(var/mob/living/carbon/human/H, var/rank, var/assignment, var/equip_adjustments)
+	if(!pda_slot || !pda_type)
+		return
+	if(OUTFIT_ADJUSTMENT_SKIP_ID_PDA & equip_adjustments)
+		return
+	var/obj/item/modular_computer/pda/pda = new pda_type(H)
+	if(H.equip_to_slot_or_store_or_drop(pda, pda_slot))
+		return pda
 
 /decl/hierarchy/outfit/dd_SortValue()
 	return name

@@ -4,8 +4,14 @@
 	random = 1
 	holder_type = /obj/machinery/camera
 	wire_count = 6
+	descriptions = list(
+		new /datum/wire_description(CAMERA_WIRE_FOCUS, "This wire runs to the camera's lens adjustment motors."),
+		new /datum/wire_description(CAMERA_WIRE_POWER, "This wire seems to be carrying a heavy current."),
+		new /datum/wire_description(CAMERA_WIRE_LIGHT, "This wire seems connected to the built-in light.", SKILL_EXPERT),
+		new /datum/wire_description(CAMERA_WIRE_ALARM, "This wire is connected to a remote signaling device of some sort.")
+	)
 
-/datum/wires/camera/GetInteractWindow()
+/datum/wires/camera/GetInteractWindow(mob/user)
 
 	. = ..()
 	var/obj/machinery/camera/C = holder
@@ -69,3 +75,21 @@ var/const/CAMERA_WIRE_NOTHING2 = 32
 		return 1
 	else
 		return 0
+
+/datum/wires/camera/SolveWireFunction(var/function)
+	var/sf = ""
+	switch(function)
+		if(CAMERA_WIRE_FOCUS)
+			sf = "Port A"
+		if(CAMERA_WIRE_POWER)
+			sf = "Port B"
+		if(CAMERA_WIRE_LIGHT)
+			sf = "Port C"
+		if(CAMERA_WIRE_ALARM)
+			sf = "Port D"
+		if(CAMERA_WIRE_NOTHING1)
+			sf = "Port E"
+		if(CAMERA_WIRE_NOTHING2)
+			sf = "Port F"
+
+	return sf

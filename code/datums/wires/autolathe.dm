@@ -2,12 +2,17 @@
 
 	holder_type = /obj/machinery/autolathe
 	wire_count = 6
+	descriptions = list(
+		new /datum/wire_description(AUTOLATHE_HACK_WIRE, "This wire appears to lead to an auxiliary data storage unit."),
+		new /datum/wire_description(AUTOLATHE_SHOCK_WIRE, "This wire seems to be carrying a heavy current."),
+		new /datum/wire_description(AUTOLATHE_DISABLE_WIRE, "This wire is connected to the power switch.", SKILL_EXPERT)
+	)
 
 var/const/AUTOLATHE_HACK_WIRE = 1
 var/const/AUTOLATHE_SHOCK_WIRE = 2
 var/const/AUTOLATHE_DISABLE_WIRE = 4
 
-/datum/wires/autolathe/GetInteractWindow()
+/datum/wires/autolathe/GetInteractWindow(mob/user)
 	var/obj/machinery/autolathe/A = holder
 	. += ..()
 	. += "<BR>The red light is [A.disabled ? "off" : "on"]."
@@ -58,3 +63,15 @@ var/const/AUTOLATHE_DISABLE_WIRE = 4
 				if(A && !IsIndexCut(index))
 					A.disabled = 0
 					Interact(usr)
+
+/datum/wires/autolathe/SolveWireFunction(var/function)
+	var/sf = ""
+	switch(function)
+		if(AUTOLATHE_HACK_WIRE)
+			sf = "Port A"
+		if(AUTOLATHE_SHOCK_WIRE)
+			sf = "Port B"
+		if(AUTOLATHE_DISABLE_WIRE)
+			sf = "Port C"
+
+	return sf

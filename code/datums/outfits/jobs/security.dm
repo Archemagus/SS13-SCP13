@@ -15,22 +15,15 @@
 	l_ear = /obj/item/device/radio/headset/heads/hos
 	uniform = /obj/item/clothing/under/rank/head_of_security
 	id_type = /obj/item/weapon/card/id/security/head
-	pda_type = /obj/item/device/pda/heads/hos
+	pda_type = /obj/item/modular_computer/pda/heads/hos
 	backpack_contents = list(/obj/item/weapon/handcuffs = 1)
-/*
-/decl/hierarchy/outfit/site90/crew/security/corporalofficer
-	name = OUTFIT_JOB_NAME("Security Corporal")
-	uniform = /obj/item/clothing/under/scp/whiteuniform
-	l_ear = /obj/item/device/radio/headset/heads/cos
-	shoes = /obj/item/clothing/shoes/dutyboots
-	id_type = /obj/item/weapon/card/id/seclvl1
 
 /decl/hierarchy/outfit/job/security/warden
 	name = OUTFIT_JOB_NAME("Warden")
 	uniform = /obj/item/clothing/under/rank/warden
 	l_pocket = /obj/item/device/flash
 	id_type = /obj/item/weapon/card/id/security/warden
-	pda_type = /obj/item/device/pda/warden
+	pda_type = /obj/item/modular_computer/pda/security
 
 /decl/hierarchy/outfit/job/security/detective
 	name = OUTFIT_JOB_NAME("Detective")
@@ -41,13 +34,13 @@
 	shoes = /obj/item/clothing/shoes/laceup
 	r_hand = /obj/item/weapon/storage/briefcase/crimekit
 	id_type = /obj/item/weapon/card/id/security/detective
-	pda_type = /obj/item/device/pda/detective
+	pda_type = /obj/item/modular_computer/pda/forensics
 	backpack_contents = list(/obj/item/weapon/storage/box/evidence = 1)
 
 /decl/hierarchy/outfit/job/security/detective/New()
 	..()
 	backpack_overrides.Cut()
-*/
+
 /decl/hierarchy/outfit/job/security/detective/forensic
 	name = OUTFIT_JOB_NAME("Forensic technician")
 	head = null
@@ -59,4 +52,4 @@
 	l_pocket = /obj/item/device/flash
 	r_pocket = /obj/item/weapon/handcuffs
 	id_type = /obj/item/weapon/card/id/security
-	pda_type = /obj/item/device/pda/security
+	pda_type = /obj/item/modular_computer/pda/security
