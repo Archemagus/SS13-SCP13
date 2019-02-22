@@ -48,7 +48,7 @@ var/next_station_date_change = 1 DAY
 	if(!station_date || update_time)
 		var/extra_days = round(station_time_in_ticks / (1 DAY)) DAYS
 		var/timeofday = world.timeofday + extra_days
-		station_date = num2text((text2num(time2text(timeofday, "YYYY"))+12)) + "-" + time2text(timeofday, "MM-DD")
+		station_date = num2text((text2num(time2text(timeofday, "YYYY"))+544)) + "-" + time2text(timeofday, "MM-DD")
 	return station_date
 
 /proc/time_stamp()
@@ -92,6 +92,9 @@ var/round_start_time = 0
 	next_duration_update = world.time + 1 MINUTES
 	return last_round_duration
 
+/proc/SQLtime()
+	return time2text(world.realtime, "YYYY-MM-DD hh:mm:ss")
+
 /hook/startup/proc/set_roundstart_hour()
 	roundstart_hour = pick(2,7,12,17)
 	return 1
@@ -108,7 +111,7 @@ GLOBAL_VAR_INIT(rollovercheck_last_timeofday, 0)
 #define DELTA_CALC max(((max(world.tick_usage, world.cpu) / 100) * max(Master.sleep_delta,1)), 1)
 
 /proc/stoplag()
-	if (!Master || !(Master.current_runlevel & RUNLEVELS_DEFAULT))
+	if (!Master || !(GAME_STATE & RUNLEVELS_DEFAULT))
 		sleep(world.tick_lag)
 		return 1
 	. = 0

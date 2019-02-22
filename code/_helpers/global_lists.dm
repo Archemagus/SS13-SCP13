@@ -1,31 +1,12 @@
 //Since it didn't really belong in any other category, I'm putting this here
 //This is for procs to replace all the goddamn 'in world's that are chilling around the code
 
-// New objects, mostly created at startup, get added to these lists. GLOB isn't used because it isn't always available at startup.
-var/global/list/obj_list = list()
-var/global/list/structure_list = list()
-var/global/list/flora_list = list()
-var/global/list/effect_list = list()
-var/global/list/item_list = list()
-var/global/list/device_list = list()
-var/global/list/camera_list = list()
-var/global/list/cable_list = list()
-var/global/list/chemical_reaction_list = list()
-var/global/list/chemical_reagent_list = list()
-var/global/list/landmark_list = list()
-var/global/list/surgery_step_list = list()
-var/global/list/side_effect_list = list()
-var/global/list/mecha_list = list()
-var/global/list/job_list = list()
-var/global/list/lighting_corner_list = list()
-var/global/list/lighting_overlay_list = list()
-var/global/list/nano_module_list = list()
-var/global/list/singularity_list = list()
-var/global/list/admin_datums_by_value = list() // "admin_datums" is an associative list of "key" = /datum. This is just a list of datums.
-var/global/list/cleanable_decals_list = list()
-var/global/list/turf_list = list()
-var/global/list/unsimulated_turf_list = list()
-var/global/list/simulated_turf_list = list()
+var/global/list/cable_list = list()					//Index for all cables, so that powernets don't have to look through the entire world all the time
+var/global/list/landmarks_list = list()				//list of all landmarks created
+var/global/list/surgery_steps = list()				//list of all surgery steps  |BS12
+var/global/list/side_effects = list()				//list of all medical sideeffects types by thier names |BS12
+var/global/list/mechas_list = list()				//list of all mechs. Used by hostile mobs target tracking.
+var/global/list/joblist = list()					//list of all jobstypes, minus borg and AI
 
 #define all_genders_define_list list(MALE,FEMALE,PLURAL,NEUTER)
 #define all_genders_text_list list("Male","Female","Plural","Neuter")
@@ -38,9 +19,6 @@ var/global/list/whitelisted_species = list(SPECIES_HUMAN) // Species that requir
 var/global/list/playable_species = list(SPECIES_HUMAN)    // A list of ALL playable species, whitelisted, latejoin or otherwise.
 
 var/list/mannequins_
-
-// Posters
-var/global/list/poster_designs = list()
 
 // Grabs
 var/global/list/all_grabstates[0]
@@ -59,7 +37,7 @@ GLOBAL_LIST_EMPTY(body_marking_styles_list)		//stores /datum/sprite_accessory/ma
 
 GLOBAL_DATUM_INIT(underwear, /datum/category_collection/underwear, new())
 
-var/global/list/exclude_jobs = list(/datum/job/ai)
+var/global/list/exclude_jobs = list(/datum/job/ai,/datum/job/cyborg)
 
 // Visual nets
 var/list/datum/visualnet/visual_nets = list()
@@ -106,19 +84,6 @@ var/global/list/string_slot_flags = list(
 /////Initial Building/////
 //////////////////////////
 
-/hook/global_init/proc/populateGlobalLists()
-	possible_cable_coil_colours = sortAssoc(list(
-		"Yellow" = COLOR_YELLOW,
-		"Green" = COLOR_LIME,
-		"Pink" = COLOR_PINK,
-		"Blue" = COLOR_BLUE,
-		"Orange" = COLOR_ORANGE,
-		"Cyan" = COLOR_CYAN,
-		"Red" = COLOR_RED,
-		"White" = COLOR_WHITE
-	))
-	return 1
-
 /proc/get_mannequin(var/ckey)
 	if(!mannequins_)
 		mannequins_ = new()
@@ -152,15 +117,15 @@ var/global/list/string_slot_flags = list(
 	paths = typesof(/datum/surgery_step)-/datum/surgery_step
 	for(var/T in paths)
 		var/datum/surgery_step/S = new T
-		global.surgery_step_list += S
+		surgery_steps += S
 	sort_surgeries()
 
 	//List of job. I can't believe this was calculated multiple times per tick!
-	paths = typesof(/datum/job)-/datum/job
-	paths -= exclude_jobs
-	for(var/T in paths)
-		var/datum/job/J = new T
-		global.job_list[J.title] = J
+	for(var/jtype in subtypesof(/datum/job))
+		var/datum/job/job = jtype
+		if(initial(job.available_by_default))
+			job = new jtype
+			joblist[job.title] = job
 
 	//Languages and species.
 	paths = typesof(/datum/language)-/datum/language
@@ -192,12 +157,6 @@ var/global/list/string_slot_flags = list(
 		if(S.spawn_flags & SPECIES_IS_WHITELISTED)
 			whitelisted_species += S.name
 
-	//Posters
-	paths = typesof(/datum/poster) - /datum/poster
-	for(var/T in paths)
-		var/datum/poster/P = new T
-		poster_designs += P
-
 	//Grabs
 	paths = typesof(/datum/grab) - /datum/grab
 	for(var/T in paths)
@@ -216,21 +175,7 @@ var/global/list/string_slot_flags = list(
 
 	return 1
 
-/* // Uncomment to debug chemical reaction list.
-/client/verb/debug_chemical_list()
-
-	for (var/reaction in global.chemical_reaction_list)
-		. += "global.chemical_reaction_list\[\"[reaction]\"\] = \"[global.chemical_reaction_list[reaction]]\"\n"
-		if(islist(global.chemical_reaction_list[reaction]))
-			var/list/L = global.chemical_reaction_list[reaction]
-			for(var/t in L)
-				. += "    has: [t]\n"
-	log_debug(.)
-
-*/
-
 //*** params cache
-
 var/global/list/paramslist_cache = list()
 
 #define cached_key_number_decode(key_number_data) cached_params_decode(key_number_data, /proc/key_number_decode)

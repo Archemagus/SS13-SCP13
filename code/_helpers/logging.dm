@@ -1,10 +1,6 @@
 //wrapper macros for easier grepping
 #define DIRECT_OUTPUT(A, B) A << B
-#define SEND_IMAGE(target, image) DIRECT_OUTPUT(target, image)
-#define SEND_SOUND(target, sound) DIRECT_OUTPUT(target, sound)
-#define SEND_TEXT(target, text) DIRECT_OUTPUT(target, text)
 #define WRITE_FILE(file, text) DIRECT_OUTPUT(file, text)
-#define WRITE_LOG(log, text) rustg_log_write(log, text)
 
 
 // On Linux/Unix systems the line endings are LF, on windows it's CRLF, admins that don't use notepad++
@@ -38,7 +34,7 @@
 	to_world_log("## TESTING: [msg][log_end]")
 
 /proc/game_log(category, text)
-	WRITE_LOG(diary, "\[[time_stamp()]] [game_id] [category]: [text][log_end]")
+	diary << "\[[time_stamp()]] [game_id] [category]: [text][log_end]"
 
 /proc/log_admin(text)
 	GLOB.admin_log.Add(text)
@@ -58,6 +54,10 @@
 	warning(text)
 	to_debug_listeners(text, "WARNING")
 
+/proc/log_sql(text)
+	if (config.sql_enabled)
+		diary <<"\[[time_stamp()]] [game_id] SQL: [text][log_end]"
+
 /proc/to_debug_listeners(text, prefix = "DEBUG")
 	for(var/client/C in GLOB.admins)
 		if(C.get_preference_value(/datum/client_preference/staff/show_debug_logs) == GLOB.PREF_SHOW)
@@ -66,9 +66,6 @@
 /proc/log_game(text)
 	if (config.log_game)
 		game_log("GAME", text)
-
-/proc/log_qdel_refactor(text)
-	WRITE_FILE("data/logs/qdel_refactor.txt", text)
 
 /proc/log_vote(text)
 	if (config.log_vote)
@@ -105,6 +102,10 @@
 /proc/log_adminwarn(text)
 	if (config.log_adminwarn)
 		game_log("ADMINWARN", text)
+
+/proc/log_permissions(text)
+	if (config.log_permissions)
+		game_log("PERMISSIONS", text)
 
 /proc/log_pda(text)
 	if (config.log_pda)
@@ -228,8 +229,14 @@
 	if(islist(d))
 		var/list/L = list()
 		for(var/e in d)
-			L += log_info_line(e)
+			// Indexing on numbers just gives us the same number again in the best case and causes an index out of bounds runtime in the worst
+			var/v = isnum(e) ? null : d[e]
+			L += "[log_info_line(e)][v ? " - [log_info_line(v)]" : ""]"
 		return "\[[jointext(L, ", ")]\]" // We format the string ourselves, rather than use json_encode(), because it becomes difficult to read recursively escaped "
 	if(!istype(d))
 		return json_encode(d)
 	return d.get_log_info_line()
+
+/proc/report_progress(var/progress_message)
+	admin_notice("<span class='boldannounce'>[progress_message]</span>", R_DEBUG)
+	to_world_log(progress_message)

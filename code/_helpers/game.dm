@@ -1,14 +1,5 @@
 //This file was auto-corrected by findeclaration.exe on 25.5.2012 20:42:31
 
-/proc/dopage(src,target)
-	var/href_list
-	var/href
-	href_list = params2list("src=\ref[src]&[target]=1")
-	href = "src=\ref[src];[target]=1"
-	src:temphtml = null
-	src:Topic(href, href_list)
-	return null
-
 /proc/is_on_same_plane_or_station(var/z1, var/z2)
 	if(z1 == z2)
 		return 1
@@ -28,9 +19,10 @@
 
 /proc/living_observers_present(var/list/zlevels)
 	if(LAZYLEN(zlevels))
-		for(var/client/C in GLOB.clients) //if a tree ticks on the empty zlevel does it really tick
-			if(isliving(C.mob)) //(no it doesn't)
-				var/turf/T = get_turf(C.mob)
+		for(var/A in GLOB.player_list) //if a tree ticks on the empty zlevel does it really tick
+			var/mob/M = A
+			if(M.stat != DEAD) //(no it doesn't)
+				var/turf/T = get_turf(M)
 				if(T && (T.z in zlevels))
 					return TRUE
 	return FALSE
@@ -40,13 +32,13 @@
 	return loc ? loc.z : 0
 
 /proc/get_area(O)
-	var/turf/loc = get_turf(O)
-	if(loc)
-		var/area/res = loc.loc
-		.= res
+	if(isarea(O))
+		return O
+	var/turf/T = get_turf(O)
+	return T ? T.loc : null
 
 /proc/get_area_name(N) //get area by its name
-	for(var/area/A in GLOB.areas)
+	for(var/area/A in world)
 		if(A.name == N)
 			return A
 	return 0
@@ -288,8 +280,6 @@
 
 
 
-#define SIGN(X) ((X<0)?-1:1)
-
 proc
 	inLineOfSight(X1,Y1,X2,Y2,Z=1,PX1=16.5,PY1=16.5,PX2=16.5,PY2=16.5)
 		var/turf/T
@@ -297,7 +287,7 @@ proc
 			if(Y1==Y2)
 				return 1 //Light cannot be blocked on same tile
 			else
-				var/s = SIGN(Y2-Y1)
+				var/s = SIMPLE_SIGN(Y2-Y1)
 				Y1+=s
 				while(Y1!=Y2)
 					T=locate(X1,Y1,Z)
@@ -307,8 +297,8 @@ proc
 		else
 			var/m=(32*(Y2-Y1)+(PY2-PY1))/(32*(X2-X1)+(PX2-PX1))
 			var/b=(Y1+PY1/32-0.015625)-m*(X1+PX1/32-0.015625) //In tiles
-			var/signX = SIGN(X2-X1)
-			var/signY = SIGN(Y2-Y1)
+			var/signX = SIMPLE_SIGN(X2-X1)
+			var/signY = SIMPLE_SIGN(Y2-Y1)
 			if(X1<X2)
 				b+=m
 			while(X1!=X2 || Y1!=Y2)
@@ -320,7 +310,6 @@ proc
 				if(T.opacity)
 					return 0
 		return 1
-#undef SIGN
 
 proc/isInSight(var/atom/A, var/atom/B)
 	var/turf/Aturf = get_turf(A)
@@ -351,7 +340,7 @@ proc/isInSight(var/atom/A, var/atom/B)
 			return get_step(start, EAST)
 
 /proc/get_mob_by_key(var/key)
-	for(var/mob/M in GLOB.mob_list)
+	for(var/mob/M in SSmobs.mob_list)
 		if(M.ckey == lowertext(key))
 			return M
 	return null
@@ -576,4 +565,4 @@ datum/projectile_data
 	return seconds * 10
 
 /proc/round_is_spooky(var/spookiness_threshold = config.cult_ghostwriter_req_cultists)
-	return (cult.current_antagonists.len > spookiness_threshold)
+	return (GLOB.cult.current_antagonists.len > spookiness_threshold)

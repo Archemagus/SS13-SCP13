@@ -22,6 +22,9 @@
  * Text sanitization
  */
 
+proc/fix_html(var/t)
+	return replacetext(t, "ÿ", "&#1103;")
+
 //Used for preprocessing entered text
 //Added in an additional check to alert players if input is too long
 /proc/sanitize(var/input, var/max_length = MAX_MESSAGE_LEN, var/encode = 1, var/trim = 1, var/extra = 1)
@@ -35,6 +38,8 @@
 			to_chat(usr, "<span class='warning'>Your message is too long by [overflow] character\s.</span>")
 			return
 		input = copytext(input,1,max_length)
+
+	input = replace_characters(input, list("ÿ"="___255_"))
 
 	if(extra)
 		input = replace_characters(input, list("\n"=" ","\t"=" "))
@@ -53,6 +58,8 @@
 	if(trim)
 		//Maybe, we need trim text twice? Here and before copytext?
 		input = trim(input)
+
+	input = replace_characters(input, list("___255_"="&#255;"))
 
 	return input
 
@@ -129,6 +136,32 @@
 
 	return output
 
+//Used to strip text of everything but letters and numbers, make letters lowercase, and turn spaces into .'s.
+//Make sure the text hasn't been encoded if using this.
+/proc/sanitize_for_email(text)
+	if(!text) return ""
+	var/list/dat = list()
+	var/last_was_space = 1
+	for(var/i=1, i<=length(text), i++)
+		var/ascii_char = text2ascii(text,i)
+		switch(ascii_char)
+			if(65 to 90)	//A-Z, make them lowercase
+				dat += ascii2text(ascii_char + 32)
+			if(97 to 122)	//a-z
+				dat += ascii2text(ascii_char)
+				last_was_space = 0
+			if(48 to 57)	//0-9
+				dat += ascii2text(ascii_char)
+				last_was_space = 0
+			if(32)			//space
+				if(last_was_space)
+					continue
+				dat += "."		//We turn these into ., but avoid repeats or . at start.
+				last_was_space = 1
+	if(dat[length(dat)] == ".")	//kill trailing .
+		dat.Cut(length(dat))
+	return jointext(dat, null)
+
 //Returns null if there is any bad text in the string
 /proc/reject_bad_text(var/text, var/max_length=512)
 	if(length(text) > max_length)	return			//message too long
@@ -136,7 +169,6 @@
 	for(var/i=1, i<=length(text), i++)
 		switch(text2ascii(text,i))
 			if(62,60,92,47)	return			//rejects the text if it contains these bad characters: <, >, \ or /
-			if(127 to 255)	return			//rejects weird letters like ï¿½
 			if(0 to 31)		return			//more weird stuff
 			if(32)			continue		//whitespace
 			else			non_whitespace = 1
@@ -144,8 +176,16 @@
 
 
 //Old variant. Haven't dared to replace in some places.
-/proc/sanitize_old(var/t,var/list/repl_chars = list("\n"="#","\t"="#"))
-	return html_encode(replace_characters(t,repl_chars))
+/proc/sanitize_old(var/t,var/list/repl_chars = list("ÿ"="___255_"))
+	return replacetext(html_encode(replace_characters(t,repl_chars)), "___255_", "&#255;")
+
+// Truncates text to limit if necessary.
+/proc/dd_limittext(message, length)
+	var/size = length(message)
+	if (size <= length)
+		return message
+	else
+		return copytext(message, 1, length + 1)
 
 /*
  * Text searches
@@ -225,9 +265,22 @@
 /proc/trim(text)
 	return trim_left(trim_right(text))
 
+/proc/ruppertext(t as text)
+	t = uppertext(t)
+	. = ""
+	for(var/i in 1 to length(t))
+		var/a = text2ascii(t, i)
+		if (a > 223)
+			. += ascii2text(a - 32)
+		else if (a == 184)
+			. += ascii2text(168)
+		else
+			. += ascii2text(a)
+	. = replacetext(.,"&#255;","ß")
+
 //Returns a string with the first element of the string capitalized.
 /proc/capitalize(var/t as text)
-	return uppertext(copytext(t, 1, 2)) + copytext(t, 2)
+	return ruppertext(copytext(t, 1, 2)) + copytext(t, 2)
 
 //This proc strips html properly, remove < > and all text between
 //for complete text sanitizing should be used sanitize()
@@ -306,7 +359,15 @@ proc/TextPreview(var/string,var/len=40)
 
 //alternative copytext() for encoded text, doesn't break html entities (&#34; and other)
 /proc/copytext_preserve_html(var/text, var/first, var/last)
-	return html_encode(copytext(html_decode(text), first, last))
+	var/temp = replacetextEx(text, "&#255;", "ß")
+	temp = replacetextEx(temp, "&#1103;", "ß")
+	var/delta = length(text) - length(temp)
+	if(delta < 0)
+		delta = 0
+	var/msg = html_encode(copytext(html_decode(text), first, last + delta))
+	msg = replacetextEx(msg, "&amp;#255;", "&#255;")
+	msg = replacetextEx(msg, "&amp;#1103;", "&#1103;")
+	return msg
 
 //For generating neat chat tag-images
 //The icon var could be local in the proc, but it's a waste of resources
@@ -332,6 +393,44 @@ proc/TextPreview(var/string,var/len=40)
 			if(48 to 57)			//Numbers
 				return 1
 	return 0
+
+//unicode sanitization
+/proc/sanitize_u(t)
+	t = html_encode(sanitize(t))
+	t = replacetext(t, "____255_", "&#1103;")
+	return t
+
+//convertion cp1251 to unicode
+/proc/sanitize_a2u(t)
+	t = replacetext(t, "&#255;", "&#1103;")
+	return t
+
+//convertion unicode to cp1251
+/proc/sanitize_u2a(t)
+	t = replacetext(t, "&#1103;", "&#255;")
+	return t
+
+//clean sanitize cp1251
+/proc/sanitize_a0(t)
+	t = replacetext(t, "ÿ", "&#255;")
+	return t
+
+//clean sanitize unicode
+/proc/sanitize_u0(t)
+	t = replacetext(t, "ÿ", "&#1103;")
+	return t
+
+GLOBAL_LIST_INIT(cyrillic_symbols, list("à", "á", "â", "ã", "ä", "å", "¸", "æ", "ç", "è", "é", "ê", "ë", "ì", \
+	"í", "î", "ï", "ð", "ñ", "ò", "ó", "ô", "õ", "ö", "÷", "ø", "ù", "ü", "û", "ú", "ý", "þ", "ÿ", \
+	"À", "Á", "Â", "Ã", "Ä", "Å", "¨", "Æ", "Ç", "È", "É", "Ê", "Ë", "Ì", "Í", "Î", "Ï", \
+	"Ð", "Ñ", "Ò", "Ó", "Ô", "Õ", "Ö", "×", "Ø", "Ù", "Ü", "Û", "Ú", "Ý", "Þ", "ß"))
+
+/proc/remore_cyrillic(t)
+	for(var/i in GLOB.cyrillic_symbols)
+		t = replacetext(t, i, "")
+	return t
+
+var/list/alphabet = list("a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z")
 
 /proc/generateRandomString(var/length)
 	. = list()
@@ -384,14 +483,50 @@ proc/TextPreview(var/string,var/len=40)
 	t = replacetext(t, "\[/grid\]", "</td></tr></table>")
 	t = replacetext(t, "\[row\]", "</td><tr>")
 	t = replacetext(t, "\[cell\]", "<td>")
-	t = replacetext(t, "\[englogo\]", "<img src = eng.png>")
-	t = replacetext(t, "\[seclogo\]", "<img src = sec.png>")
-	t = replacetext(t, "\[medlogo\]", "<img src = med.png>")
-	t = replacetext(t, "\[scilogo\]", "<img src = sci.png>")
-	t = replacetext(t, "\[ethicslogo\]", "<img src = ethics.png>")
-	t = replacetext(t, "\[loglogo\]", "<img src = log.png>")
-	t = replacetext(t, "\[logo\]", "<img src = scplogo.png>")
+	t = replacetext(t, "\[logo\]", "<img src = ntlogo.png>")
+	t = replacetext(t, "ÿ", "&#1103;")
+	t = replacetext(t, "&#255;", "&#1103;")
+	t = replacetext(t, "\[bluelogo\]", "<img src = bluentlogo.png>")
+	t = replacetext(t, "\[solcrest\]", "<img src = sollogo.png>")
+	t = replacetext(t, "\[torchltd\]", "<img src = torchltd.png>")
+	t = replacetext(t, "\[terraseal\]", "<img src = terralogo.png>")
 	t = replacetext(t, "\[editorbr\]", "")
+	t = replacetext(t, "\[img\]","<img src=\"")
+	t = replacetext(t, "\[/img\]", "\" />")
+	return t
+
+//Will kill most formatting; not recommended.
+/proc/html2pencode(t)
+	t = replacetext(t, "<BR>", "\[br\]")
+	t = replacetext(t, "<br>", "\[br\]")
+	t = replacetext(t, "<B>", "\[b\]")
+	t = replacetext(t, "</B>", "\[/b\]")
+	t = replacetext(t, "<I>", "\[i\]")
+	t = replacetext(t, "</I>", "\[/i\]")
+	t = replacetext(t, "<U>", "\[u\]")
+	t = replacetext(t, "</U>", "\[/u\]")
+	t = replacetext(t, "<center>", "\[center\]")
+	t = replacetext(t, "</center>", "\[/center\]")
+	t = replacetext(t, "<H1>", "\[h1\]")
+	t = replacetext(t, "</H1>", "\[/h1\]")
+	t = replacetext(t, "<H2>", "\[h2\]")
+	t = replacetext(t, "</H2>", "\[/h2\]")
+	t = replacetext(t, "<H3>", "\[h3\]")
+	t = replacetext(t, "</H3>", "\[/h3\]")
+	t = replacetext(t, "<li>", "\[*\]")
+	t = replacetext(t, "<HR>", "\[hr\]")
+	t = replacetext(t, "<ul>", "\[list\]")
+	t = replacetext(t, "</ul>", "\[/list\]")
+	t = replacetext(t, "<table>", "\[grid\]")
+	t = replacetext(t, "</table>", "\[/grid\]")
+	t = replacetext(t, "<tr>", "\[row\]")
+	t = replacetext(t, "<td>", "\[cell\]")
+	t = replacetext(t, "<img src = ntlogo.png>", "\[logo\]")
+	t = replacetext(t, "<img src = bluentlogo.png>", "\[bluelogo\]")
+	t = replacetext(t, "<img src = sollogo.png>", "\[solcrest\]")
+	t = replacetext(t, "<img src = terralogo.png>", "\[terraseal\]")
+	t = replacetext(t, "<span class=\"paper_field\"></span>", "\[field\]")
+	t = strip_html_properly(t)
 	return t
 
 // Random password generator
@@ -466,3 +601,9 @@ proc/TextPreview(var/string,var/len=40)
 		if (text2ascii(A, i) != text2ascii(B, i))
 			return FALSE
 	return TRUE
+
+// If char isn't part of the text the entire text is returned
+/proc/copytext_after_last(var/text, var/char)
+	var/regex/R = regex("(\[^[char]\]*)$")
+	R.Find(text)
+	return R.group[1]
