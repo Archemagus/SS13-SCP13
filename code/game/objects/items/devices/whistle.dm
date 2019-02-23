@@ -9,6 +9,7 @@
 	var/use_message = "Halt! Security!"
 	var/spamcheck = 0
 	var/insults
+	action_button_name = "Use Hailer"
 
 /obj/item/device/hailer/verb/set_message()
 	set name = "Set Hailer Message"
@@ -26,8 +27,8 @@
 		use_message = capitalize(copytext(sanitize(new_message), 1, MAX_MESSAGE_LEN))
 
 	to_chat(usr, "You configure the hailer to shout \"[use_message]\".")
-/
-obj/item/device/hailer/attack_self(mob/living/carbon/user as mob)
+
+/obj/item/device/hailer/attack_self(mob/living/carbon/user as mob)
 	if (spamcheck)
 		return
 

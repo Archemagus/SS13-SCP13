@@ -16,22 +16,15 @@
 		T.update_icon()
 
 //Creates a new turf
-#define NO_SPACE_TILES
 /turf/proc/ChangeTurf(var/turf/N, var/tell_universe=1, var/force_lighting_update = 0)
 	if (!N)
 		return
-
-	#ifdef NO_SPACE_TILES
-	if (istype(src, /turf/simulated))
-		if (istype(N, /turf/space) || ispath(N, /turf/space))
-			return
-	#endif
 
 	// This makes sure that turfs are not changed to space when one side is part of a zone
 	if(N == /turf/space)
 		var/turf/below = GetBelow(src)
 		if(istype(below) && !istype(below,/turf/space))
-			N = below.density ? /turf/simulated/floor/airless : /turf/simulated/open
+			N = /turf/simulated/open
 
 	var/obj/fire/old_fire = fire
 	var/old_opacity = opacity
@@ -39,6 +32,7 @@
 	var/old_affecting_lights = affecting_lights
 	var/old_lighting_overlay = lighting_overlay
 	var/old_corners = corners
+	//var/old_ao_neighbors = ao_neighbors
 
 //	log_debug("Replacing [src.type] with [N]")
 
@@ -64,7 +58,7 @@
 		if (istype(W,/turf/simulated/floor))
 			W.RemoveLattice()
 	else if(old_fire)
-		old_fire.RemoveFire()
+		qdel(old_fire)
 
 	if(tell_universe)
 		GLOB.universe.OnTurfChange(W)
@@ -76,8 +70,9 @@
 
 	W.post_change()
 	. = W
+	//W.ao_neighbors = old_ao_neighbors
 
-	if(SSlighting.lighting_overlays_initialised)
+	if(lighting_overlays_initialised)
 		lighting_overlay = old_lighting_overlay
 		affecting_lights = old_affecting_lights
 		corners = old_corners
@@ -114,6 +109,12 @@
 		other.zone.remove(other)
 	return 1
 
+/turf/simulated/wall/transport_properties_from(turf/simulated/wall/other)
+	if(!..())
+		return 0
+	paint_color = other.paint_color
+	stripe_color = other.stripe_color
+	return 1
 
 //No idea why resetting the base appearence from New() isn't enough, but without this it doesn't work
 /turf/simulated/shuttle/wall/corner/transport_properties_from(turf/simulated/other)

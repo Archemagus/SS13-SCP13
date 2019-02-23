@@ -1,4 +1,4 @@
-#define WHITELISTFILE "config/whitelist.txt"
+#define WHITELISTFILE "data/whitelist.txt"
 
 var/list/whitelist = list()
 
@@ -11,12 +11,10 @@ var/list/whitelist = list()
 	whitelist = file2list(WHITELISTFILE)
 	if(!whitelist.len)	whitelist = null
 
-/proc/check_whitelist(mob/M, var/rank)
-	if(whitelist)
-		for (var/line in whitelist)
-			if (M.ckey in line)
-				if ("+[rank]" in line)
-					return TRUE
+/proc/check_whitelist(mob/M /*, var/rank*/)
+	if(!whitelist)
+		return 0
+	return ("[M.ckey]" in whitelist)
 
 /var/list/alien_whitelist = list()
 
@@ -24,7 +22,7 @@ var/list/whitelist = list()
 	if(config.usealienwhitelist)
 		if(config.usealienwhitelistSQL)
 			if(!load_alienwhitelistSQL())
-				WRITE_LOG(world.log, "Could not load alienwhitelist via SQL")
+				world.log << "Could not load alienwhitelist via SQL"
 		else
 			load_alienwhitelist()
 	return 1
@@ -37,9 +35,9 @@ var/list/whitelist = list()
 		alien_whitelist = splittext(text, "\n")
 		return 1
 /proc/load_alienwhitelistSQL()
-	var/DBQuery/query = dbcon_old.NewQuery("SELECT * FROM whitelist")
+	var/DBQuery/query = dbcon.NewQuery("SELECT * FROM whitelist")
 	if(!query.Execute())
-		WRITE_LOG(world.log, dbcon_old.ErrorMsg())
+		world.log << dbcon.ErrorMsg()
 		return 0
 	else
 		while(query.NextRow())

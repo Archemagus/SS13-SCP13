@@ -36,15 +36,15 @@
 	return INITIALIZE_HINT_LATELOAD
 
 /obj/machinery/door_timer/LateInitialize()
-	for(var/obj/machinery/door/window/brigdoor/M in SSmachines.all_machinery)
+	for(var/obj/machinery/door/window/brigdoor/M in SSmachines.machinery)
 		if (M.id == src.id)
 			targets += M
 
-	for(var/obj/machinery/flasher/F in SSmachines.all_machinery)
+	for(var/obj/machinery/flasher/F in SSmachines.machinery)
 		if(F.id == src.id)
 			targets += F
 
-	for(var/obj/structure/closet/secure_closet/brig/C in global.structure_list)
+	for(var/obj/structure/closet/secure_closet/brig/C in world)
 		if(C.id == src.id)
 			targets += C
 
@@ -68,7 +68,7 @@
 
 
 		if(world.timeofday > src.releasetime)
-			src.timer_end() // open doors, reset timer, clear status screen
+			src.timer_end(TRUE) // open doors, reset timer, clear status screen, broadcast to sec HUDs
 			src.timing = 0
 
 		src.update_icon()
@@ -107,7 +107,7 @@
 
 
 // Opens and unlocks doors, power check
-/obj/machinery/door_timer/proc/timer_end()
+/obj/machinery/door_timer/proc/timer_end(var/broadcast_to_huds = 0)
 	if(stat & (NOPOWER|BROKEN))	return 0
 
 	// Reset releasetime
@@ -115,6 +115,9 @@
 
 	//reset timing
 	timing = 0
+
+	if (broadcast_to_huds)
+		broadcast_security_hud_message("The timer for [id] has expired.", src)
 
 	for(var/obj/machinery/door/window/brigdoor/door in targets)
 		if(!door.density)	continue
@@ -209,7 +212,7 @@
 // if NOPOWER, display blank
 // if BROKEN, display blue screen of death icon AI uses
 // if timing=true, run update display function
-/obj/machinery/door_timer/update_icon()
+/obj/machinery/door_timer/on_update_icon()
 	if(stat & (NOPOWER))
 		icon_state = "frame"
 		return

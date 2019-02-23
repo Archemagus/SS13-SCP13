@@ -1,12 +1,10 @@
-#define ZONE_BLOCKED 2
-#define AIR_BLOCKED 1
 //Interactions
 /turf/simulated/wall/proc/toggle_open(var/mob/user)
 
 	if(can_open == WALL_OPENING)
 		return
 
-	radiation_repository.resistance_cache.Remove(src)
+	SSradiation.resistance_cache.Remove(src)
 
 	if(density)
 		can_open = WALL_OPENING
@@ -31,7 +29,7 @@
 		update_icon()
 		update_air()
 		sleep(15)
-		set_light(1)
+		//set_light(0.4, 0.1, 1)
 		src.blocks_air = 1
 		set_opacity(1)
 		for(var/turf/simulated/turf in loc)
@@ -39,9 +37,6 @@
 
 	can_open = WALL_CAN_OPEN
 	update_icon()
-
-#undef ZONE_BLOCKED
-#undef AIR_BLOCKED
 
 /turf/simulated/wall/proc/update_air()
 	if(!SSair)
@@ -97,7 +92,7 @@
 	add_fingerprint(user)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	var/rotting = (locate(/obj/effect/overlay/wallrot) in src)
-	if (HULK in user.mutations)
+	if (MUTATION_HULK in user.mutations)
 		if (rotting || !prob(material.hardness))
 			success_smash(user)
 		else
@@ -128,9 +123,13 @@
 		return success_smash(user)
 	return fail_smash(user)
 
-/turf/simulated/wall/attackby(obj/item/weapon/W as obj, mob/user as mob)
+/turf/simulated/wall/attackby(var/obj/item/weapon/W, var/mob/user)
 
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
+
+	if(!construction_stage && try_graffiti(user, W))
+		return
+
 	if (!user.IsAdvancedToolUser())
 		to_chat(user, "<span class='warning'>You don't have the dexterity to do this!</span>")
 		return
@@ -222,14 +221,10 @@
 			dismantle_verb = "slicing"
 			cut_delay *= 0.5
 		else if(istype(W,/obj/item/weapon/pickaxe))
-			if (material.integrity < 500)
-				var/obj/item/weapon/pickaxe/P = W
-				dismantle_verb = P.drill_verb
-				dismantle_sound = P.drill_sound
-				cut_delay -= P.digspeed
-			else 
-				to_chat(usr, "<span class='notice'>You can't penetrate this material.</span>")
-				return
+			var/obj/item/weapon/pickaxe/P = W
+			dismantle_verb = P.drill_verb
+			dismantle_sound = P.drill_sound
+			cut_delay -= P.digspeed
 
 		if(dismantle_verb)
 
@@ -362,8 +357,8 @@
 		if(reinf_material)
 			dam_threshhold = ceil(max(dam_threshhold,reinf_material.integrity)/2)
 		var/dam_prob = min(100,material.hardness*1.5)
-		if(dam_prob < 100 && W.force > (dam_threshhold/10))
-			playsound(src, hitsound, 80, 1)
+		if((dam_prob < 100 && W.force > (dam_threshhold/10)) && !W.holographic)
+			playsound(src, 'sound/effects/metalhit.ogg', 50, 1)
 			if(!prob(dam_prob))
 				visible_message("<span class='danger'>\The [user] attacks \the [src] with \the [W] and it [material.destruction_desc]!</span>")
 				dismantle_wall(1)
@@ -371,4 +366,5 @@
 				visible_message("<span class='danger'>\The [user] attacks \the [src] with \the [W]!</span>")
 		else
 			visible_message("<span class='danger'>\The [user] attacks \the [src] with \the [W], but it bounces off!</span>")
+			playsound(src, hitsound, 25, 1)
 		return

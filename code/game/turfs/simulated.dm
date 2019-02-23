@@ -1,5 +1,3 @@
-GLOBAL_LIST_EMPTY(simulated_turfs_scp106)
-
 /turf/simulated
 	name = "station"
 	var/wet = 0
@@ -16,13 +14,6 @@ GLOBAL_LIST_EMPTY(simulated_turfs_scp106)
 	var/dirt = 0
 
 	var/timer_id
-
-/turf/simulated/post_change()
-	..()
-	var/turf/T = GetAbove(src)
-	if(istype(T,/turf/space) || (density && istype(T,/turf/simulated/open)))
-		var/new_turf_type = density ? (istype(T.loc, /area/space) ? /turf/simulated/floor/airless : /turf/simulated/floor/plating) : /turf/simulated/open
-		T.ChangeTurf(new_turf_type)
 
 // This is not great.
 /turf/simulated/proc/wet_floor(var/wet_val = 1, var/overwrite = FALSE)
@@ -57,11 +48,9 @@ GLOBAL_LIST_EMPTY(simulated_turfs_scp106)
 	if(istype(loc, /area/chapel))
 		holy = 1
 	levelupdate()
-	global.simulated_turf_list += src
 
 /turf/simulated/Destroy()
 	deltimer(timer_id)
-	global.simulated_turf_list -= src
 	return ..()
 
 /turf/simulated/proc/AddTracks(var/typepath,var/bloodDNA,var/comingdir,var/goingdir,var/bloodcolor=COLOR_BLOOD_HUMAN)
@@ -99,10 +88,10 @@ GLOBAL_LIST_EMPTY(simulated_turfs_scp106)
 			if(H.shoes)
 				var/obj/item/clothing/shoes/S = H.shoes
 				if(istype(S))
-					S.handle_movement(src,(H.m_intent == "run" ? 1 : 0))
+					S.handle_movement(src, MOVING_QUICKLY(H))
 					if(S.track_blood && S.blood_DNA)
 						bloodDNA = S.blood_DNA
-						bloodcolor=S.blood_color
+						bloodcolor = S.blood_color
 						S.track_blood--
 			else
 				if(H.track_blood && H.feet_blood_DNA)
@@ -110,7 +99,7 @@ GLOBAL_LIST_EMPTY(simulated_turfs_scp106)
 					bloodcolor = H.feet_blood_color
 					H.track_blood--
 
-			if (bloodDNA)
+			if (bloodDNA && H.species.get_move_trail(H))
 				src.AddTracks(H.species.get_move_trail(H),bloodDNA,H.dir,0,bloodcolor) // Coming
 				var/turf/simulated/from = get_step(H,reverse_direction(H.dir))
 				if(istype(from) && from)
@@ -120,7 +109,11 @@ GLOBAL_LIST_EMPTY(simulated_turfs_scp106)
 
 		if(src.wet)
 
-			if(M.buckled || (M.m_intent == "walk" && prob(min(100, 100/(wet/10))) ) )
+			if(M.buckled || (MOVING_DELIBERATELY(M) && prob(min(100, 100/(wet/10))) ) )
+				return
+
+			// skillcheck for slipping
+			if(!prob(min(100, M.skill_fail_chance(SKILL_HAULING, 100, SKILL_MAX+1)/(3/wet))))
 				return
 
 			var/slip_dist = 1
@@ -177,3 +170,8 @@ GLOBAL_LIST_EMPTY(simulated_turfs_scp106)
 		coil.turf_place(src, user)
 		return
 	return ..()
+
+/turf/simulated/Initialize()
+	if(GAME_STATE >= RUNLEVEL_GAME)
+		fluid_update()
+	. = ..()

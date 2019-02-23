@@ -2,7 +2,7 @@
 	name = "plating"
 	icon = 'icons/turf/flooring/plating.dmi'
 	icon_state = "plating"
-
+	//permit_ao = FALSE
 	// Damage to flooring.
 	var/broken
 	var/burnt
@@ -49,6 +49,9 @@
 
 	overlays.Cut()
 
+	for(var/obj/effect/decal/writing/W in src)
+		qdel(W)
+
 	SetName(base_name)
 	desc = base_desc
 	icon = base_icon
@@ -79,3 +82,15 @@
 		plane = TURF_PLANE
 	else
 		plane = PLATING_PLANE
+
+/turf/simulated/floor/can_engrave()
+	return (!flooring || flooring.can_engrave)
+
+/turf/simulated/floor/shuttle_ceiling
+	name = "hull plating"
+	icon = 'icons/turf/flooring/tiles.dmi'
+	icon_state = "reinforced_light"
+	initial_gas = null
+
+/turf/simulated/floor/shuttle_ceiling/air
+	initial_gas = list("oxygen" = MOLES_O2STANDARD, "nitrogen" = MOLES_N2STANDARD)

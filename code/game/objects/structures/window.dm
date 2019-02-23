@@ -7,8 +7,8 @@
 
 	layer = SIDE_WINDOW_LAYER
 	anchored = 1.0
-	atom_flags = ATOM_FLAG_CHECKS_BORDER
-	alpha = 122
+	atom_flags = ATOM_FLAG_NO_TEMP_CHANGE | ATOM_FLAG_CHECKS_BORDER
+	alpha = 180
 	var/maxhealth = 14.0
 	var/maximal_heat = T0C + 100 		// Maximal heat before this window begins taking damage from fire
 	var/damage_per_fire_tick = 2.0 		// Amount of damage per fire tick. Regular windows are not fireproof so they might as well break quickly.
@@ -23,8 +23,8 @@
 	var/silicate = 0 // number of units of silicate
 	var/on_frame = FALSE
 	var/material_color
-	blend_objects = list(/obj/machinery/door) // Objects which to blend with
-	noblend_objects = list(/obj/machinery/door/window)
+	blend_objects = list(/obj/machinery/door, /turf/simulated/wall) // Objects which to blend with
+	noblend_objects = list(/obj/machinery/door/window, /obj/machinery/door/blast/regular/evacshield) //Objects to avoid blending with (such as children of listed blend objects.
 
 	atmos_canpass = CANPASS_PROC
 
@@ -51,7 +51,10 @@
 		else
 			to_chat(user, "<span class='notice'>There is a thick layer of silicate covering it.</span>")
 
-/obj/structure/window/proc/take_damage(var/damage = 0,  var/sound_effect = 1)
+/obj/structure/window/CanFluidPass(var/coming_from)
+	return (!is_full_window() && coming_from != dir)
+
+/obj/structure/window/take_damage(damage = 0,  var/sound_effect = 1)
 	var/initialhealth = health
 
 	if(silicate)
@@ -65,11 +68,11 @@
 		if(sound_effect)
 			playsound(loc, 'sound/effects/Glasshit.ogg', 100, 1)
 		if(health < maxhealth / 4 && initialhealth >= maxhealth / 4)
-			visible_message("[src] looks like it's about to shatter!" )
+			visible_message("<span class='notice'>\The [src] looks like it's about to shatter!</span>")
 		else if(health < maxhealth / 2 && initialhealth >= maxhealth / 2)
-			visible_message("[src] looks seriously damaged!" )
+			visible_message("\The [src] looks seriously damaged!" )
 		else if(health < maxhealth * 3/4 && initialhealth >= maxhealth * 3/4)
-			visible_message("Cracks begin to appear in [src]!" )
+			visible_message("Cracks begin to appear in \the [src]!" )
 	return
 
 /obj/structure/window/proc/apply_silicate(var/amount)
@@ -93,7 +96,7 @@
 /obj/structure/window/proc/shatter(var/display_message = 1)
 	playsound(src, "shatter", 70, 1)
 	if(display_message)
-		visible_message("[src] shatters!")
+		visible_message("<span class='notice'>\The [src] shatters!</span>")
 
 	cast_new(shardtype, is_fulltile() ? 4 : 1, loc)
 	if(reinf) cast_new(/obj/item/stack/rods, is_fulltile() ? 4 : 1, loc)
@@ -171,46 +174,43 @@
 
 /obj/structure/window/attack_hand(mob/user as mob)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
-
-	if(HULK in user.mutations)
+	if(MUTATION_HULK in user.mutations)
 		user.say(pick(";RAAAAAAAARGH!", ";HNNNNNNNNNGGGGGGH!", ";GWAAAAAAAARRRHHH!", "NNNNNNNNGGGGGGGGHH!", ";AAAAAAARRRGH!"))
 		user.visible_message("<span class='danger'>[user] smashes through [src]!</span>")
 		user.do_attack_animation(src)
 		shatter()
 
-	else if (isscp049_1(user))
-		user.visible_message("<span class='danger'>[user] smashes through [src]!</span>")
-		user.do_attack_animation(src)
-		shatter()
+	else if (user.a_intent && user.a_intent == I_HURT)
 
-	else if (usr.a_intent == I_HURT)
-
-		if (istype(usr,/mob/living/carbon/human))
-			var/mob/living/carbon/human/H = usr
+		if (istype(user,/mob/living/carbon/human))
+			var/mob/living/carbon/human/H = user
 			if(H.species.can_shred(H))
 				attack_generic(H,25)
 				return
 
 		playsound(src.loc, 'sound/effects/glassknock.ogg', 80, 1)
 		user.do_attack_animation(src)
-		usr.visible_message("<span class='danger'>\The [usr] bangs against \the [src]!</span>",
+		user.visible_message("<span class='danger'>\The [user] bangs against \the [src]!</span>",
 							"<span class='danger'>You bang against \the [src]!</span>",
 							"You hear a banging sound.")
 	else
 		playsound(src.loc, 'sound/effects/glassknock.ogg', 80, 1)
-		usr.visible_message("[usr.name] knocks on the [src.name].",
+		user.visible_message("[user.name] knocks on the [src.name].",
 							"You knock on the [src.name].",
 							"You hear a knocking sound.")
 	return
 
-/obj/structure/window/attack_generic(var/mob/user, var/damage)
+/obj/structure/window/attack_generic(var/mob/user, var/damage, var/attack_verb, var/environment_smash)
+	if(environment_smash >= 1)
+		damage = max(damage, 10)
+
 	if(istype(user))
 		user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 		user.do_attack_animation(src)
 	if(!damage)
 		return
 	if(damage >= 10)
-		visible_message("<span class='danger'>[user] smashes into [src]!</span>")
+		visible_message("<span class='danger'>[user] [attack_verb] into [src]!</span>")
 		take_damage(damage)
 	else
 		visible_message("<span class='notice'>\The [user] bonks \the [src] harmlessly.</span>")
@@ -245,7 +245,7 @@
 		else
 			playsound(src.loc, 'sound/items/Ratchet.ogg', 75, 1)
 			visible_message("<span class='notice'>[user] dismantles \the [src].</span>")
-			if(dir == SOUTHWEST)
+			if(is_full_window())
 				var/obj/item/stack/material/mats = new glasstype(loc)
 				mats.amount = is_fulltile() ? 4 : 2
 			else
@@ -259,6 +259,9 @@
 			P.set_dir(dir)
 			P.health = health
 			P.state = state
+			P.icon_state = icon_state
+			P.basestate = basestate
+			P.update_icon()
 			qdel(src)
 	else
 		user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
@@ -387,8 +390,15 @@
 		verbs += /obj/structure/window/proc/rotate
 		verbs += /obj/structure/window/proc/revrotate
 
+// Visually connect with every type of window as long as it's full-tile.
+/obj/structure/window/can_visually_connect()
+	return ..() && is_fulltile()
+
+/obj/structure/window/can_visually_connect_to(var/obj/structure/S)
+	return istype(S, /obj/structure/window)
+
 //merges adjacent full-tile windows into one (blatant ripoff from game/smoothwall.dm)
-/obj/structure/window/update_icon()
+/obj/structure/window/on_update_icon()
 	//A little cludge here, since I don't know how it will work with slim windows. Most likely VERY wrong.
 	//this way it will only update full-tile ones
 	overlays.Cut()
@@ -398,24 +408,23 @@
 		layer = SIDE_WINDOW_LAYER
 		icon_state = "[basestate]"
 		return
+
+	var/image/I
+	icon_state = ""
+	if(on_frame)
+		for(var/i = 1 to 4)
+			if(other_connections[i] != "0")
+				I = image(icon, "[basestate]_other_onframe[connections[i]]", dir = 1<<(i-1))
+			else
+				I = image(icon, "[basestate]_onframe[connections[i]]", dir = 1<<(i-1))
+			overlays += I
 	else
-		var/image/I
-		icon_state = ""
-		if(on_frame)
-			for(var/i = 1 to 4)
-				if(other_connections[i] != "0")
-					I = image(icon, "[basestate]_other_onframe[connections[i]]", dir = 1<<(i-1))
-				else
-					I = image(icon, "[basestate]_onframe[connections[i]]", dir = 1<<(i-1))
-				overlays += I
-		else
-			for(var/i = 1 to 4)
-				if(other_connections[i] != "0")
-					I = image(icon, "[basestate]_other[connections[i]]", dir = 1<<(i-1))
-				else
-					I = image(icon, "[basestate][connections[i]]", dir = 1<<(i-1))
-				overlays += I
-	return
+		for(var/i = 1 to 4)
+			if(other_connections[i] != "0")
+				I = image(icon, "[basestate]_other[connections[i]]", dir = 1<<(i-1))
+			else
+				I = image(icon, "[basestate][connections[i]]", dir = 1<<(i-1))
+			overlays += I
 
 /obj/structure/window/fire_act(datum/gas_mixture/air, exposed_temperature, exposed_volume)
 	if(exposed_temperature > maximal_heat)
@@ -434,6 +443,10 @@
 	material_color = GLASS_COLOR
 	color = GLASS_COLOR
 
+/obj/structure/window/basic/full
+	dir = 5
+	icon_state = "window_full"
+
 /obj/structure/window/phoronbasic
 	name = "phoron window"
 	desc = "A borosilicate alloy window. It seems to be quite strong."
@@ -448,7 +461,7 @@
 
 /obj/structure/window/phoronbasic/full
 	dir = 5
-	icon_state = "phoronwindow0"
+	icon_state = "window_full"
 
 /obj/structure/window/phoronreinforced
 	name = "reinforced borosilicate window"
@@ -466,7 +479,7 @@
 
 /obj/structure/window/phoronreinforced/full
 	dir = 5
-	icon_state = "phoronwindow0"
+	icon_state = "window_full"
 
 /obj/structure/window/reinforced
 	name = "reinforced window"
@@ -496,6 +509,9 @@
 /obj/structure/window/reinforced/full
 	dir = 5
 	icon_state = "rwindow_full"
+
+/obj/structure/window/reinforced/bar
+	color = COLOR_BROWN
 
 /obj/structure/window/reinforced/tinted
 	name = "tinted window"
@@ -536,6 +552,8 @@
 /obj/structure/window/reinforced/polarized/attackby(obj/item/W as obj, mob/user as mob)
 	if(isMultitool(W))
 		var/t = sanitizeSafe(input(user, "Enter the ID for the window.", src.name, null), MAX_NAME_LEN)
+		if(user.incapacitated() && !user.Adjacent(src))
+			return
 		if (user.get_active_hand() != W)
 			return
 		if (!in_range(src, user) && src.loc != user)
@@ -602,8 +620,21 @@
 
 /obj/machinery/button/windowtint/attackby(obj/item/device/W as obj, mob/user as mob)
 	if(isMultitool(W))
-		to_chat(user, "<span class='notice'>The ID of the button: [id]</span>")
+		var/t = sanitizeSafe(input(user, "Enter the ID for the button.", src.name, id), MAX_NAME_LEN)
+		if(user.incapacitated() && !user.Adjacent(src))
+			return
+		if (user.get_active_hand() != W)
+			return
+		if (!in_range(src, user) && src.loc != user)
+			return
+		t = sanitizeSafe(t, MAX_NAME_LEN)
+		if (t)
+			src.id = t
+			to_chat(user, "<span class='notice'>The new ID of the button is [id]</span>")
 		return
+	if(istype(W, /obj/item/weapon/screwdriver))
+		new /obj/item/frame/light_switch/windowtint(user.loc, 1)
+		qdel(src)
 
 /obj/machinery/button/windowtint/proc/toggle_tint()
 	use_power(5)
@@ -622,5 +653,5 @@
 	if(active && !powered(power_channel))
 		toggle_tint()
 
-/obj/machinery/button/windowtint/update_icon()
+/obj/machinery/button/windowtint/on_update_icon()
 	icon_state = "light[active]"

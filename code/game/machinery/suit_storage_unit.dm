@@ -49,9 +49,7 @@
 
 /obj/machinery/suit_storage_unit/atmos
 	name = "Atmospherics Voidsuit Storage Unit"
-	suit_type = /obj/item/clothing/suit/space/void/atmos
-	helmet_type = /obj/item/clothing/head/helmet/space/void/atmos
-	boots_type = /obj/item/clothing/shoes/magboots
+	suit_type = /obj/item/clothing/suit/space/void/atmos/prepared
 	tank_type = /obj/item/weapon/tank/oxygen
 	mask_type = /obj/item/clothing/mask/breath
 	req_access = list(access_atmospherics)
@@ -60,32 +58,34 @@
 /obj/machinery/suit_storage_unit/atmos/alt
 	suit_type = /obj/item/clothing/suit/space/void/atmos/alt
 	helmet_type = /obj/item/clothing/head/helmet/space/void/atmos/alt
+	mask_type = /obj/item/clothing/mask/breath
+	tank_type = /obj/item/weapon/tank/oxygen
+	boots_type = /obj/item/clothing/shoes/magboots
 
 /obj/machinery/suit_storage_unit/engineering
 	name = "Engineering Voidsuit Storage Unit"
-	suit_type = /obj/item/clothing/suit/space/void/engineering
-	helmet_type = /obj/item/clothing/head/helmet/space/void/engineering
-	boots_type = /obj/item/clothing/shoes/magboots
+	suit_type = /obj/item/clothing/suit/space/void/engineering/prepared
 	tank_type = /obj/item/weapon/tank/oxygen
 	mask_type = /obj/item/clothing/mask/breath
-	req_access = list(access_mtflvl2)
+	req_access = list(access_engine)
 	islocked = 1
 
 /obj/machinery/suit_storage_unit/engineering/alt
 	suit_type = /obj/item/clothing/suit/space/void/engineering/alt
 	helmet_type = /obj/item/clothing/head/helmet/space/void/engineering/alt
+	tank_type = /obj/item/weapon/tank/oxygen
+	boots_type = /obj/item/clothing/shoes/magboots
 	mask_type = /obj/item/clothing/mask/breath
 
 /obj/machinery/suit_storage_unit/engineering/salvage
 	suit_type = /obj/item/clothing/suit/space/void/engineering/salvage
 	helmet_type = /obj/item/clothing/head/helmet/space/void/engineering/salvage
+	boots_type = /obj/item/clothing/shoes/magboots
 	mask_type = /obj/item/clothing/mask/breath
 
 /obj/machinery/suit_storage_unit/medical
 	name = "Medical Voidsuit Storage Unit"
-	suit_type = /obj/item/clothing/suit/space/void/medical
-	helmet_type = /obj/item/clothing/head/helmet/space/void/medical
-	boots_type = /obj/item/clothing/shoes/magboots
+	suit_type = /obj/item/clothing/suit/space/void/medical/prepared
 	tank_type = /obj/item/weapon/tank/oxygen
 	mask_type = /obj/item/clothing/mask/breath
 	req_access = list(access_medical)
@@ -94,13 +94,13 @@
 /obj/machinery/suit_storage_unit/medical/alt
 	suit_type = /obj/item/clothing/suit/space/void/medical/alt
 	helmet_type = /obj/item/clothing/head/helmet/space/void/medical/alt
+	tank_type = /obj/item/weapon/tank/oxygen
+	boots_type = /obj/item/clothing/shoes/magboots
 	mask_type = /obj/item/clothing/mask/breath
 
 /obj/machinery/suit_storage_unit/mining
 	name = "Mining Voidsuit Storage Unit"
-	suit_type = /obj/item/clothing/suit/space/void/mining
-	helmet_type = /obj/item/clothing/head/helmet/space/void/mining
-	boots_type = /obj/item/clothing/shoes/magboots
+	suit_type = /obj/item/clothing/suit/space/void/mining/prepared
 	tank_type = /obj/item/weapon/tank/oxygen
 	mask_type = /obj/item/clothing/mask/breath
 	req_access = list(access_mining)
@@ -109,13 +109,13 @@
 /obj/machinery/suit_storage_unit/mining/alt
 	suit_type = /obj/item/clothing/suit/space/void/mining/alt
 	helmet_type = /obj/item/clothing/head/helmet/space/void/mining/alt
+	tank_type = /obj/item/weapon/tank/oxygen
+	boots_type = /obj/item/clothing/shoes/magboots
 	mask_type = /obj/item/clothing/mask/breath
 
 /obj/machinery/suit_storage_unit/science
 	name = "Excavation Voidsuit Storage Unit"
-	suit_type = /obj/item/clothing/suit/space/void/excavation
-	helmet_type = /obj/item/clothing/head/helmet/space/void/excavation
-	boots_type = /obj/item/clothing/shoes/magboots
+	suit_type = /obj/item/clothing/suit/space/void/excavation/prepared
 	tank_type = /obj/item/weapon/tank/oxygen
 	mask_type = /obj/item/clothing/mask/breath
 	req_access = list(access_xenoarch)
@@ -123,24 +123,24 @@
 
 /obj/machinery/suit_storage_unit/security
 	name = "Security Voidsuit Storage Unit"
-	suit_type = /obj/item/clothing/suit/space/void/security
-	helmet_type = /obj/item/clothing/head/helmet/space/void/security
-	boots_type = /obj/item/clothing/shoes/magboots
+	suit_type = /obj/item/clothing/suit/space/void/security/prepared
 	tank_type = /obj/item/weapon/tank/oxygen
-	mask_type = /obj/item/clothing/mask/breath
+	mask_type = /obj/item/clothing/mask/gas/half
 	req_access = list(access_security)
 	islocked = 1
 
 /obj/machinery/suit_storage_unit/security/alt
 	suit_type = /obj/item/clothing/suit/space/void/security/alt
 	helmet_type = /obj/item/clothing/head/helmet/space/void/security/alt
-	mask_type = /obj/item/clothing/mask/breath
+	boots_type = /obj/item/clothing/shoes/magboots
+
+/obj/machinery/suit_storage_unit/security/sapper
+	name = "Sapper Voidsuit Storage Unit"
+	suit_type = /obj/item/clothing/suit/space/void/sapper/prepared
 
 /obj/machinery/suit_storage_unit/merc
 	name = "Nonstandard Voidsuit Storage Unit"
-	suit_type = /obj/item/clothing/suit/space/void/merc
-	helmet_type = /obj/item/clothing/head/helmet/space/void/merc
-	boots_type = /obj/item/clothing/shoes/magboots
+	suit_type = /obj/item/clothing/suit/space/void/merc/prepared
 	tank_type = /obj/item/weapon/tank/oxygen
 	mask_type = /obj/item/clothing/mask/breath
 	req_access = list(access_syndicate)
@@ -162,7 +162,7 @@
 		mask = new mask_type(src)
 	update_icon()
 
-/obj/machinery/suit_storage_unit/update_icon()
+/obj/machinery/suit_storage_unit/on_update_icon()
 	overlays.Cut()
 	if(panelopen)
 		overlays += ("panel")
@@ -374,6 +374,7 @@
 		eject_occupant(user)
 		return  // eject_occupant opens the door, so we need to return
 	isopen = !isopen
+	playsound(src, 'sound/machines/suitstorage_cycledoor.ogg', 50, 0)
 	return
 
 
@@ -390,6 +391,7 @@
 	if(isopen)
 		return
 	islocked = !islocked
+	playsound(src, 'sound/machines/suitstorage_lockdoor.ogg', 50, 0)
 	return
 
 
@@ -525,7 +527,7 @@
 		usr.stop_pulling()
 		usr.client.perspective = EYE_PERSPECTIVE
 		usr.client.eye = src
-		usr.loc = src
+		usr.forceMove(src)
 		occupant = usr
 		isopen = 0 //Close the thing after the guy gets inside
 		update_icon()
@@ -575,7 +577,7 @@
 			if (M.client)
 				M.client.perspective = EYE_PERSPECTIVE
 				M.client.eye = src
-			M.loc = src
+			M.forceMove(src)
 			occupant = M
 			isopen = 0 //close ittt
 			add_fingerprint(user)
@@ -584,80 +586,30 @@
 			update_icon()
 			return
 		return
-	if( istype(I,/obj/item/clothing/suit/space) )
-		if(!isopen)
-			return
-		var/obj/item/clothing/suit/space/S = I
-		if(suit)
-			to_chat(user, "<span class='notice'>The unit already contains a suit.</span>")
-			return
-		to_chat(user, "You load the [S.name] into the storage compartment.")
-		user.drop_item()
-		S.forceMove(src)
-		suit = S
-		update_icon()
-		updateUsrDialog()
-		return
-	if( istype(I,/obj/item/clothing/head/helmet/space) )
-		if(!isopen)
-			return
-		var/obj/item/clothing/head/helmet/H = I
-		if(helmet )
-			to_chat(user, "<span class='notice'>The unit already contains a helmet.</span>")
-			return
-		to_chat(user, "You load the [H.name] into the storage compartment.")
-		user.drop_item()
-		H.forceMove(src)
-		helmet  = H
-		update_icon()
-		updateUsrDialog()
-		return
-	if( istype(I,/obj/item/clothing/shoes/magboots) )
-		if(!isopen)
-			return
-		var/obj/item/clothing/shoes/magboots/B = I
-		if(boots)
-			to_chat(user, "<span class='notice'>The unit already contains a pair of magboots.</span>")
-			return
-		to_chat(user, "You load the [B.name] into the storage compartment.")
-		user.drop_item()
-		B.forceMove(src)
-		boots = B
-		update_icon()
-		updateUsrDialog()
-		return
-	if( istype(I,/obj/item/weapon/tank) )
-		if(!isopen)
-			return
-		var/obj/item/weapon/tank/T = I
-		if(tank)
-			to_chat(user, "<span class='notice'>The unit already contains an air tank.</span>")
-			return
-		to_chat(user, "You load the [T.name] into the storage compartment.")
-		user.drop_item()
-		T.forceMove(src)
-		tank = T
-		update_icon()
-		updateUsrDialog()
-		return
-	if( istype(I,/obj/item/clothing/mask) )
-		if(!isopen)
-			return
-		var/obj/item/clothing/mask/M = I
-		if(mask)
-			to_chat(user, "<span class='notice'>The unit already contains a mask.</span>")
-			return
-		to_chat(user, "You load the [M.name] into the storage compartment.")
-		user.drop_item()
-		M.forceMove(src)
-		mask = M
-		update_icon()
-		updateUsrDialog()
-		return
+
+#define TRY_INSERT_SUIT_PIECE(slot, path)\
+	if(istype(I, /obj/item/##path)){\
+		if(!isopen) return;\
+		if(##slot){\
+			to_chat(user, "<span class='notice'>The unit already contains \a [slot].</span>");\
+			return\
+		};\
+		if(!user.unEquip(I, src)) return;\
+		to_chat(user, "You load the [I.name] into the storage compartment.");\
+		##slot = I;\
+		update_icon();\
+		updateUsrDialog();\
+		return\
+	}
+
+	TRY_INSERT_SUIT_PIECE(suit, clothing/suit/space)
+	TRY_INSERT_SUIT_PIECE(helmet, clothing/head/helmet/space)
+	TRY_INSERT_SUIT_PIECE(boots, clothing/shoes/magboots)
+	TRY_INSERT_SUIT_PIECE(tank, weapon/tank)
+	TRY_INSERT_SUIT_PIECE(mask, clothing/mask)
 	update_icon()
 	updateUsrDialog()
-	return
-
+#undef TRY_INSERT_SUIT_PIECE
 
 /obj/machinery/suit_storage_unit/attack_ai(mob/user as mob)
 	return attack_hand(user)
@@ -677,7 +629,7 @@
 	icon = 'icons/obj/suitstorage.dmi'
 	icon_state = "close"
 
-	req_access = list(access_captain,access_heads)
+	req_access = list(access_captain,access_bridge)
 
 	var/active = 0          // PLEASE HOLD.
 	var/safeties = 1        // The cycler won't start with a living thing inside it unless safeties are off.
@@ -691,7 +643,7 @@
 	//Departments that the cycler can paint suits to look like.
 	var/list/departments = list("Engineering","Mining","Medical","Security","Atmos","Science","Pilot")
 	//Species that the suits can be configured to fit.
-	var/list/species = list(SPECIES_HUMAN,SPECIES_SKRELL,SPECIES_UNATHI,SPECIES_TAJARA)
+	var/list/species = list(SPECIES_HUMAN,SPECIES_SKRELL,SPECIES_UNATHI,SPECIES_TAJARA,SPECIES_RESOMI, SPECIES_EROSAN)
 
 	var/target_department
 	var/target_species
@@ -720,42 +672,45 @@
 	model_text = "Engineering"
 	req_access = list(access_construction)
 	departments = list("Engineering","Atmos")
-	species = list(SPECIES_HUMAN,SPECIES_TAJARA,SPECIES_SKRELL,SPECIES_UNATHI) //Add Unathi when sprites exist for their suits.
+
+/obj/machinery/suit_cycler/engineering/alt
+	departments = list("Engineering, Alt", "Atmos, Alt")
 
 /obj/machinery/suit_cycler/mining
 	name = "Mining suit cycler"
 	model_text = "Mining"
 	req_access = list(access_mining)
 	departments = list("Mining")
-	species = list(SPECIES_HUMAN,SPECIES_TAJARA,SPECIES_SKRELL,SPECIES_UNATHI)
 
 /obj/machinery/suit_cycler/science
 	name = "Excavation suit cycler"
 	model_text = "Excavation"
 	req_access = list(access_xenoarch)
 	departments = list("Science")
-	species = list(SPECIES_HUMAN,SPECIES_TAJARA,SPECIES_SKRELL,SPECIES_UNATHI)
 
 /obj/machinery/suit_cycler/security
 	name = "Security suit cycler"
 	model_text = "Security"
 	req_access = list(access_security)
-	departments = list("Security")
-	species = list(SPECIES_HUMAN,SPECIES_TAJARA,SPECIES_SKRELL,SPECIES_UNATHI)
+	departments = list("Security","Security, Alt")
+
+/obj/machinery/suit_cycler/security/alt
+	departments = list("Security, Alt")
 
 /obj/machinery/suit_cycler/medical
 	name = "Medical suit cycler"
 	model_text = "Medical"
 	req_access = list(access_medical)
 	departments = list("Medical")
-	species = list(SPECIES_HUMAN,SPECIES_TAJARA,SPECIES_SKRELL,SPECIES_UNATHI)
+
+/obj/machinery/suit_cycler/medical/alt
+	departments = list("Medical, Alt")
 
 /obj/machinery/suit_cycler/syndicate
 	name = "Nonstandard suit cycler"
 	model_text = "Nonstandard"
 	req_access = list(access_syndicate)
 	departments = list("Mercenary")
-	species = list(SPECIES_HUMAN,SPECIES_TAJARA,SPECIES_SKRELL,SPECIES_UNATHI)
 	can_repair = 1
 
 /obj/machinery/suit_cycler/pilot
@@ -763,7 +718,6 @@
 	model_text = "Pilot"
 	req_access = list(access_mining_office)
 	departments = list("Pilot")
-	species = list(SPECIES_HUMAN,SPECIES_TAJARA,SPECIES_SKRELL,SPECIES_UNATHI)
 
 /obj/machinery/suit_cycler/attack_ai(mob/user as mob)
 	return attack_hand(user)
@@ -802,7 +756,7 @@
 			if (M.client)
 				M.client.perspective = EYE_PERSPECTIVE
 				M.client.eye = src
-			M.loc = src
+			M.forceMove(src)
 			occupant = M
 
 			add_fingerprint(user)
@@ -831,10 +785,9 @@
 		if(I.icon_override == CUSTOM_ITEM_MOB)
 			to_chat(user, "You cannot refit a customised voidsuit.")
 			return
-
+		if(!user.unEquip(I, src))
+			return
 		to_chat(user, "You fit \the [I] into the suit cycler.")
-		user.drop_item()
-		I.loc = src
 		helmet = I
 
 		update_icon()
@@ -854,10 +807,9 @@
 		if(I.icon_override == CUSTOM_ITEM_MOB)
 			to_chat(user, "You cannot refit a customised voidsuit.")
 			return
-
+		if(!user.unEquip(I, src))
+			return
 		to_chat(user, "You fit \the [I] into the suit cycler.")
-		user.drop_item()
-		I.loc = src
 		suit = I
 
 		update_icon()
@@ -931,11 +883,11 @@
 /obj/machinery/suit_cycler/Topic(href, href_list)
 	if(href_list["eject_suit"])
 		if(!suit) return
-		suit.loc = get_turf(src)
+		suit.dropInto(loc)
 		suit = null
 	else if(href_list["eject_helmet"])
 		if(!helmet) return
-		helmet.loc = get_turf(src)
+		helmet.dropInto(loc)
 		helmet = null
 	else if(href_list["select_department"])
 		var/choice = input("Please select the target department paintjob.","Suit cycler",null) as null|anything in departments
@@ -1070,7 +1022,7 @@
 		occupant.client.eye = occupant.client.mob
 		occupant.client.perspective = MOB_PERSPECTIVE
 
-	occupant.loc = get_turf(occupant)
+	occupant.dropInto(occupant.loc)
 	occupant = null
 
 	add_fingerprint(user)
@@ -1098,6 +1050,18 @@
 			if(suit)
 				suit.SetName("engineering voidsuit")
 				suit.icon_state = "rig-engineering"
+				suit.item_state_slots = list(
+					slot_l_hand_str = "eng_voidsuit",
+					slot_r_hand_str = "eng_voidsuit",
+				)
+		if("Engineering, Alt")
+			if(helmet)
+				helmet.SetName("engineering voidsuit helmet")
+				helmet.icon_state = "rig0-engineeringalt"
+				helmet.item_state = "engalt_helm"
+			if(suit)
+				suit.SetName("engineering voidsuit")
+				suit.icon_state = "rig-engineeringalt"
 				suit.item_state_slots = list(
 					slot_l_hand_str = "eng_voidsuit",
 					slot_r_hand_str = "eng_voidsuit",
@@ -1138,6 +1102,18 @@
 					slot_l_hand_str = "medical_voidsuit",
 					slot_r_hand_str = "medical_voidsuit",
 				)
+		if("Medical, Alt")
+			if(helmet)
+				helmet.SetName("medical voidsuit helmet")
+				helmet.icon_state = "rig0-medicalalt"
+				helmet.item_state = "medicalalt_helm"
+			if(suit)
+				suit.SetName("medical voidsuit")
+				suit.icon_state = "rig-medicalalt"
+				suit.item_state_slots = list(
+					slot_l_hand_str = "medical_voidsuit",
+					slot_r_hand_str = "medical_voidsuit",
+				)
 		if("Security")
 			if(helmet)
 				helmet.SetName("security voidsuit helmet")
@@ -1150,6 +1126,18 @@
 					slot_l_hand_str = "sec_voidsuit",
 					slot_r_hand_str = "sec_voidsuit",
 				)
+		if("Security, Alt")
+			if(helmet)
+				helmet.SetName("security voidsuit helmet")
+				helmet.icon_state = "rig0-secalt"
+				helmet.item_state = "secalt_helm"
+			if(suit)
+				suit.SetName("security voidsuit")
+				suit.icon_state = "rig-secalt"
+				suit.item_state_slots = list(
+					slot_l_hand_str = "sec_voidsuit",
+					slot_r_hand_str = "sec_voidsuit",
+				)
 		if("Atmos")
 			if(helmet)
 				helmet.SetName("atmospherics voidsuit helmet")
@@ -1158,6 +1146,18 @@
 			if(suit)
 				suit.SetName("atmospherics voidsuit")
 				suit.icon_state = "rig-atmos"
+				suit.item_state_slots = list(
+					slot_l_hand_str = "atmos_voidsuit",
+					slot_r_hand_str = "atmos_voidsuit",
+				)
+		if("Atmos, Alt")
+			if(helmet)
+				helmet.SetName("atmospherics voidsuit helmet")
+				helmet.icon_state = "rig0-atmosalt"
+				helmet.item_state = "atmosalt_helm"
+			if(suit)
+				suit.SetName("atmospherics voidsuit")
+				suit.icon_state = "rig-atmosalt"
 				suit.item_state_slots = list(
 					slot_l_hand_str = "atmos_voidsuit",
 					slot_r_hand_str = "atmos_voidsuit",

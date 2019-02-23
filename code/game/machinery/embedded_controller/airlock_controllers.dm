@@ -47,7 +47,7 @@
 		"secure" = program.memory["secure"]
 	)
 
-	ui = GLOB.nanomanager.try_update_ui(user, src, ui_key, ui, data, force_open)
+	ui = SSnano.try_update_ui(user, src, ui_key, ui, data, force_open)
 
 	if (!ui)
 		ui = new(user, src, ui_key, "advanced_airlock_console.tmpl", name, 470, 290, state = state)
@@ -102,7 +102,7 @@
 		"processing" = program.memory["processing"],
 	)
 
-	ui = GLOB.nanomanager.try_update_ui(user, src, ui_key, ui, data, force_open)
+	ui = SSnano.try_update_ui(user, src, ui_key, ui, data, force_open)
 
 	if (!ui)
 		ui = new(user, src, ui_key, "simple_airlock_console.tmpl", name, 470, 290, state = state)
@@ -147,7 +147,7 @@
 	tag_secure = 1
 
 
-/obj/machinery/embedded_controller/radio/airlock/access_controller/update_icon()
+/obj/machinery/embedded_controller/radio/airlock/access_controller/on_update_icon()
 	if(on && program)
 		if(program.memory["processing"])
 			icon_state = "access_control_process"
@@ -165,7 +165,7 @@
 		"processing" = program.memory["processing"]
 	)
 
-	ui = GLOB.nanomanager.try_update_ui(user, src, ui_key, ui, data, force_open)
+	ui = SSnano.try_update_ui(user, src, ui_key, ui, data, force_open)
 
 	if (!ui)
 		ui = new(user, src, ui_key, "door_access_console.tmpl", name, 330, 220, state = state)

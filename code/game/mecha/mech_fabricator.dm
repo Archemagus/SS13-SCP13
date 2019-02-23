@@ -2,17 +2,18 @@
 	icon = 'icons/obj/robotics.dmi'
 	icon_state = "fab-idle"
 	name = "Exosuit Fabricator"
-	desc = "A machine used for construction of robotcs and mechas."
+	desc = "A machine used for construction of robotics and mechas."
 	density = 1
 	anchored = 1
 	use_power = 1
 	idle_power_usage = 20
 	active_power_usage = 5000
-	req_access = list(access_sciencelvl1)
+	req_access = list(access_robotics)
 
+	var/locked = 0
 	var/speed = 1
 	var/mat_efficiency = 1
-	var/list/materials = list(DEFAULT_WALL_MATERIAL = 0, "glass" = 0, "gold" = 0, "silver" = 0, "diamond" = 0, "phoron" = 0, "uranium" = 0)
+	var/list/materials = list(MATERIAL_STEEL = 0, MATERIAL_GLASS = 0, MATERIAL_GOLD = 0, MATERIAL_SILVER = 0, MATERIAL_DIAMOND = 0, MATERIAL_PHORON = 0, MATERIAL_URANIUM = 0)
 	var/res_max_amount = 200000
 
 	var/datum/research/files
@@ -57,7 +58,7 @@
 		use_power = 1
 	update_icon()
 
-/obj/machinery/mecha_part_fabricator/update_icon()
+/obj/machinery/mecha_part_fabricator/on_update_icon()
 	overlays.Cut()
 	if(panel_open)
 		icon_state = "fab-o"
@@ -86,8 +87,6 @@
 /obj/machinery/mecha_part_fabricator/attack_hand(var/mob/user)
 	if(..())
 		return
-	if(!allowed(user))
-		return
 	ui_interact(user)
 
 /obj/machinery/mecha_part_fabricator/ui_interact(var/mob/user, var/ui_key = "main", var/datum/nanoui/ui = null, var/force_open = 1)
@@ -112,10 +111,11 @@
 	data["materials"] = get_materials()
 	data["maxres"] = res_max_amount
 	data["sync"] = sync_message
+	data["locked"] = locked
 	if(current)
 		data["builtperc"] = round((progress / current.time) * 100)
 
-	ui = GLOB.nanomanager.try_update_ui(user, src, ui_key, ui, data, force_open)
+	ui = SSnano.try_update_ui(user, src, ui_key, ui, data, force_open)
 	if(!ui)
 		ui = new(user, src, ui_key, "mechfab.tmpl", "Exosuit Fabricator UI", 800, 600)
 		ui.set_initial_data(data)
@@ -125,6 +125,13 @@
 /obj/machinery/mecha_part_fabricator/Topic(href, href_list)
 	if(..())
 		return
+
+	var/user = usr
+	if(href_list["lock"])
+		if(allowed(user) || emagged)
+			locked = !locked
+		else
+			to_chat(user, "<span class='warning'>Unauthorized Access.</span>")
 
 	if(href_list["build"])
 		add_to_queue(text2num(href_list["build"]))
@@ -302,19 +309,19 @@
 	material = lowertext(material)
 	var/mattype
 	switch(material)
-		if(DEFAULT_WALL_MATERIAL)
+		if(MATERIAL_STEEL)
 			mattype = /obj/item/stack/material/steel
-		if("glass")
+		if(MATERIAL_GLASS)
 			mattype = /obj/item/stack/material/glass
-		if("gold")
+		if(MATERIAL_GOLD)
 			mattype = /obj/item/stack/material/gold
-		if("silver")
+		if(MATERIAL_SILVER)
 			mattype = /obj/item/stack/material/silver
-		if("diamond")
+		if(MATERIAL_DIAMOND)
 			mattype = /obj/item/stack/material/diamond
-		if("phoron")
+		if(MATERIAL_PHORON)
 			mattype = /obj/item/stack/material/phoron
-		if("uranium")
+		if(MATERIAL_URANIUM)
 			mattype = /obj/item/stack/material/uranium
 		else
 			return

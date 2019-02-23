@@ -37,14 +37,14 @@ var/global/universe_has_ended = 0
 // Apply changes when entering state
 /datum/universal_state/supermatter_cascade/OnEnter()
 	set background = 1
-	to_world("<span class='sinister' style='font-size:22pt'>You are blinded by a brilliant flash of energy.</span>")
+	to_world("<span class='sinister' style='font-size:22pt'>Вы ослеплены блестящей вспышкой энергии.</span>")
 	sound_to(world, sound('sound/effects/cascade.ogg'))
 
 	for(var/mob/M in GLOB.player_list)
 		M.flash_eyes()
 
 	if(evacuation_controller.cancel_evacuation())
-		priority_announcement.Announce("The evacuation has been aborted due to bluespace distortion.")
+		priority_announcement.Announce("Аварийный шаттл был отозван из-за Blue-Space искажения.")
 
 	AreaSet()
 	MiscSet()
@@ -52,7 +52,7 @@ var/global/universe_has_ended = 0
 	OverlayAndAmbientSet()
 
 	// Disable Nar-Sie.
-	cult.allow_narsie = 0
+	GLOB.cult.allow_narsie = 0
 
 	PlayerSet()
 	SSskybox.reinstate_skyboxes("cascade", FALSE)
@@ -74,7 +74,7 @@ AUTOMATED ALERT: Link to [command_name()] lost.
 		priority_announcement.Announce(txt,"SUPERMATTER CASCADE DETECTED")
 
 		spawn(5 MINUTES)
-			ticker.station_explosion_cinematic(0,null) // TODO: Custom cinematic
+			GLOB.cinematic.station_explosion_cinematic(0,null) // TODO: Custom cinematic
 			universe_has_ended = 1
 		return
 
@@ -87,8 +87,7 @@ AUTOMATED ALERT: Link to [command_name()] lost.
 
 /datum/universal_state/supermatter_cascade/OverlayAndAmbientSet()
 	spawn(0)
-		for(var/corner in global.lighting_corner_list)	
-			var/datum/lighting_corner/L = corner
+		for(var/datum/lighting_corner/L in world)
 			if(L.z in GLOB.using_map.admin_levels)
 				L.update_lumcount(1,1,1)
 			else
@@ -98,12 +97,12 @@ AUTOMATED ALERT: Link to [command_name()] lost.
 			OnTurfChange(T)
 
 /datum/universal_state/supermatter_cascade/proc/MiscSet()
-	for (var/obj/machinery/firealarm/alm in SSmachines.all_machinery)
+	for (var/obj/machinery/firealarm/alm in SSmachines.machinery)
 		if (!(alm.stat & BROKEN))
 			alm.ex_act(2)
 
 /datum/universal_state/supermatter_cascade/proc/APCSet()
-	for (var/obj/machinery/power/apc/APC in SSmachines.all_machinery)
+	for (var/obj/machinery/power/apc/APC in SSmachines.machinery)
 		if (!(APC.stat & BROKEN) && !APC.is_critical)
 			APC.chargemode = 0
 			if(APC.cell)

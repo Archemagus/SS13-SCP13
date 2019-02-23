@@ -56,6 +56,9 @@
 		if(A.hacker && A.hacker == user)
 			to_chat(user, "You already control this APC!")
 			return
+		else if(!isStationLevel(A.z))
+			to_chat(user, "You can hack only ship's APCs.")
+			return
 		else if(A.aidisabled)
 			to_chat(user, "<span class='notice'>Unable to connect to APC. Please verify wire connection and try again.</span>")
 			return
@@ -161,7 +164,7 @@
 		return
 	log_ability_use(user, "system override (STARTED)")
 	var/list/remaining_apcs = list()
-	for(var/obj/machinery/power/apc/A in SSmachines.all_machinery)
+	for(var/obj/machinery/power/apc/A in SSmachines.machinery)
 		if(!(A.z in GLOB.using_map.station_levels)) 		// Only station APCs
 			continue
 		if(A.hacker == user || A.aidisabled) 		// This one is already hacked, or AI control is disabled on it.
@@ -205,7 +208,7 @@
 	to_chat(user, "## REACHABLE APC SYSTEMS OVERTAKEN. BYPASSING PRIMARY FIREWALL.")
 	sleep(1 MINUTE)
 	// Hack all APCs, including those built during hack sequence.
-	for(var/obj/machinery/power/apc/A in SSmachines.all_machinery)
+	for(var/obj/machinery/power/apc/A in SSmachines.machinery)
 		if((!A.hacker || A.hacker != src) && !A.aidisabled && A.z in GLOB.using_map.station_levels)
 			A.ai_hack(src)
 

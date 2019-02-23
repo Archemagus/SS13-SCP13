@@ -9,7 +9,7 @@
 	extended_round_description = "We are on an unavoidable collision course with an asteroid field. You have only a moment to prepare before you are barraged by dust and meteors. As if it was not enough, all kinds of negative events seem to happen more frequently. Good Luck."
 	config_tag = "meteor"
 	required_players = 5				// Definitely not good for low-pop
-	votable = 1
+	votable = 0
 	shuttle_delay = 2
 	var/next_wave = INFINITY			// Set in post_setup() correctly to take into account potential longer pre-start times.
 	var/alert_sent = 0
@@ -44,7 +44,7 @@
 	if((round_duration_in_ticks >= next_wave) && (alert_sent == 1))
 		alert_sent = 2
 		command_announcement.Announce(start_text, alert_title)
-		for(var/obj/machinery/shield_diffuser/SD in SSmachines.all_machinery)
+		for(var/obj/machinery/shield_diffuser/SD in SSmachines.machinery)
 			SD.meteor_alarm(INFINITY)
 		next_wave = round_duration_in_ticks + (meteor_wave_delay * time_between_waves_minutes)
 	if((round_duration_in_ticks >= METEOR_FAILSAFE_THRESHOLD) && (meteor_severity < 15) && !failsafe_triggered)

@@ -5,12 +5,14 @@
 	sharp = 0
 	edge = 0
 	armor_penetration = 50
-	atom_flags = ATOM_FLAG_NO_BLOOD
-	var/soundon = 'sound/weapons/saberon.ogg'
-	var/soundoff = 'sound/weapons/saberoff.ogg'
+	damtype = "fire"
+	hitsound = 'sound/weapons/blade1.ogg'
+	atom_flags = ATOM_FLAG_NO_TEMP_CHANGE | ATOM_FLAG_NO_BLOOD
+
+/obj/item/weapon/melee/energy/can_embed()
+	return FALSE
 
 /obj/item/weapon/melee/energy/proc/activate(mob/living/user)
-	anchored = 1
 	if(active)
 		return
 	active = 1
@@ -19,13 +21,12 @@
 	sharp = 1
 	edge = 1
 	slot_flags |= SLOT_DENYPOCKET
-	playsound(user, soundon, 50, 1)
+	playsound(user, 'sound/weapons/saberon.ogg', 50, 1)
 
 /obj/item/weapon/melee/energy/proc/deactivate(mob/living/user)
-	anchored = 0
 	if(!active)
 		return
-	playsound(user, soundoff, 50, 1)
+	playsound(user, 'sound/weapons/saberoff.ogg', 50, 1)
 	active = 0
 	force = initial(force)
 	throwforce = initial(throwforce)
@@ -35,7 +36,7 @@
 
 /obj/item/weapon/melee/energy/attack_self(mob/living/user as mob)
 	if (active)
-		if ((CLUMSY in user.mutations) && prob(50))
+		if ((MUTATION_CLUMSY in user.mutations) && prob(50))
 			user.visible_message("<span class='danger'>\The [user] accidentally cuts \himself with \the [src].</span>",\
 			"<span class='danger'>You accidentally cut yourself with \the [src].</span>")
 			user.take_organ_damage(5,5)
@@ -73,22 +74,25 @@
 	throw_speed = 1
 	throw_range = 5
 	w_class = ITEM_SIZE_NORMAL
-	atom_flags = ATOM_FLAG_NO_BLOOD
+	atom_flags = ATOM_FLAG_NO_TEMP_CHANGE | ATOM_FLAG_NO_BLOOD
 	obj_flags = OBJ_FLAG_CONDUCTIBLE
 	origin_tech = list(TECH_MAGNET = 3, TECH_COMBAT = 4)
 	attack_verb = list("attacked", "chopped", "cleaved", "torn", "cut")
 	sharp = 1
 	edge = 1
+	melee_accuracy_bonus = 15
 
 /obj/item/weapon/melee/energy/axe/activate(mob/living/user)
 	..()
 	icon_state = "axe1"
 	to_chat(user, "<span class='notice'>\The [src] is now energised.</span>")
+	set_light(0.5, 0.1, 1, 1, LIGHT_COLOR_BLUE)
 
 /obj/item/weapon/melee/energy/axe/deactivate(mob/living/user)
 	..()
 	icon_state = initial(icon_state)
 	to_chat(user, "<span class='notice'>\The [src] is de-energised. It's just a regular axe now.</span>")
+	set_light(0)
 
 /*
  * Energy Sword
@@ -105,11 +109,13 @@
 	throw_speed = 1
 	throw_range = 5
 	w_class = ITEM_SIZE_SMALL
-	atom_flags = ATOM_FLAG_NO_BLOOD
+	atom_flags = ATOM_FLAG_NO_TEMP_CHANGE | ATOM_FLAG_NO_BLOOD
 	origin_tech = list(TECH_MAGNET = 3, TECH_ILLEGAL = 4)
 	sharp = 1
 	edge = 1
+	base_parry_chance = 50
 	var/blade_color
+	var/blade_light
 
 /obj/item/weapon/melee/energy/sword/dropped(var/mob/user)
 	..()
@@ -118,18 +124,31 @@
 
 /obj/item/weapon/melee/energy/sword/New()
 	blade_color = pick("red","blue","green","purple")
+	switch(blade_color)
+		if("red")
+			blade_light = LIGHT_COLOR_FLARE
+		if("blue")
+			blade_light = LIGHT_COLOR_BLUE
+		if("green")
+			blade_light = LIGHT_COLOR_GREEN
+		if("purple")
+			blade_light = LIGHT_COLOR_PURPLE
 
 /obj/item/weapon/melee/energy/sword/green/New()
 	blade_color = "green"
+	blade_light = LIGHT_COLOR_GREEN
 
 /obj/item/weapon/melee/energy/sword/red/New()
 	blade_color = "red"
+	blade_light = LIGHT_COLOR_FLARE
 
 /obj/item/weapon/melee/energy/sword/blue/New()
 	blade_color = "blue"
+	blade_light = LIGHT_COLOR_BLUE
 
 /obj/item/weapon/melee/energy/sword/purple/New()
 	blade_color = "purple"
+	blade_light = LIGHT_COLOR_VIOLET
 
 /obj/item/weapon/melee/energy/sword/activate(mob/living/user)
 	if(!active)
@@ -137,6 +156,7 @@
 	..()
 	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
 	icon_state = "sword[blade_color]"
+	set_light(0.5, 0.1, 1, 1, blade_light)
 
 /obj/item/weapon/melee/energy/sword/deactivate(mob/living/user)
 	if(active)
@@ -144,17 +164,17 @@
 	..()
 	attack_verb = list()
 	icon_state = initial(icon_state)
+	set_light(0)
 
 /obj/item/weapon/melee/energy/sword/handle_shield(mob/user, var/damage, atom/damage_source = null, mob/attacker = null, var/def_zone = null, var/attack_text = "the attack")
-	if(active && default_parry_check(user, attacker, damage_source) && prob(50))
-		user.visible_message("<span class='danger'>\The [user] parries [attack_text] with \the [src]!</span>")
-
+	if(.)
 		var/datum/effect/effect/system/spark_spread/spark_system = new /datum/effect/effect/system/spark_spread()
 		spark_system.set_up(5, 0, user.loc)
 		spark_system.start()
 		playsound(user.loc, 'sound/weapons/blade1.ogg', 50, 1)
-		return 1
-	return 0
+
+/obj/item/weapon/melee/energy/sword/get_parry_chance(mob/user)
+	return active ? ..() : 0
 
 /obj/item/weapon/melee/energy/sword/pirate
 	name = "energy cutlass"
@@ -164,54 +184,7 @@
 /obj/item/weapon/melee/energy/sword/pirate/activate(mob/living/user)
 	..()
 	icon_state = "cutlass1"
-
-
-/obj/item/weapon/melee/energy/sword/bogsword
-	name = "alien sword"
-	desc = "A strange, strange energy sword."
-	icon_state = "sword0"
-
-/obj/item/weapon/melee/energy/sword/bogswrd/activate(mob/living/user)
-	..()
-	icon_state = "bog_sword"
-
-/obj/item/weapon/melee/energy/breach
-	name = "breaching saw"
-	desc = "A squeeze-trigger breaching saw."
-	icon_state = "saw0"
-	active_force = 65 //this thing will fuck you up
-	active_throwforce = 35
-	force = 35
-	throwforce = 20
-	throw_speed = 1
-	throw_range = 5
-	soundon = 'sound/weapons/revon.ogg'
-	soundoff = 'sound/weapons/revoff.ogg'
-	hitsound = 'sound/weapons/sawhit.ogg'
-	w_class = ITEM_SIZE_HUGE
-	//atom_flags = ATOM_FLAG_NO_BLOOD
-	obj_flags = OBJ_FLAG_CONDUCTIBLE
-	origin_tech = list(TECH_MAGNET = 3, TECH_COMBAT = 4)
-	attack_verb = list("attacked", "chopped", "cleaved", "torn", "cut")
-	sharp = 1
-	edge = 1
-
-/obj/item/weapon/melee/energy/breach/activate(mob/living/user)
-	..()
-	icon_state = "saw1"
-	item_state = "saw0"
-	to_chat(user, "<span class='notice'>\The [src] is now on.</span>")
-
-/obj/item/weapon/melee/energy/breach/deactivate(mob/living/user)
-	..()
-	icon_state = initial(icon_state)
-	to_chat(user, "<span class='notice'>\The [src] is turned off.</span>")
-
-/obj/item/weapon/melee/energy/breach/dropped(var/mob/user)
-	..()
-	if(!istype(loc,/mob))
-		deactivate(user)
-
+	set_light(0.5, 0.1, 1, 1, LIGHT_COLOR_FLARE)
 
 /*
  *Energy Blade
@@ -231,7 +204,7 @@
 	throw_speed = 1
 	throw_range = 1
 	w_class = ITEM_SIZE_TINY //technically it's just energy or something, I dunno
-	atom_flags = ATOM_FLAG_NO_BLOOD
+	atom_flags = ATOM_FLAG_NO_TEMP_CHANGE | ATOM_FLAG_NO_BLOOD
 	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
 	var/mob/living/creator
 	var/datum/effect/effect/system/spark_spread/spark_system
@@ -245,9 +218,11 @@
 /obj/item/weapon/melee/energy/blade/Initialize()
 	. = ..()
 	START_PROCESSING(SSobj, src)
+	set_light(0.5, 0.1, 1, 1, LIGHT_COLOR_GREEN)
 
 /obj/item/weapon/melee/energy/blade/Destroy()
 	STOP_PROCESSING(SSobj, src)
+	set_light(0)
 	. = ..()
 
 /obj/item/weapon/melee/energy/blade/get_storage_cost()
@@ -255,11 +230,10 @@
 
 /obj/item/weapon/melee/energy/blade/attack_self(mob/user as mob)
 	user.drop_from_inventory(src)
-	spawn(1) if(src) qdel(src)
 
 /obj/item/weapon/melee/energy/blade/dropped()
 	..()
-	spawn(1) if(src) qdel(src)
+	QDEL_IN(src, 0)
 
 /obj/item/weapon/melee/energy/blade/Process()
 	if(!creator || loc != creator || (creator.l_hand != src && creator.r_hand != src))
@@ -274,4 +248,4 @@
 			host.pinned -= src
 			host.embedded -= src
 			host.drop_from_inventory(src)
-		spawn(1) if(src) qdel(src)
+		QDEL_IN(src, 0)

@@ -24,7 +24,7 @@ for reference:
 	access_ai_upload = 16
 	access_teleporter = 17
 	access_eva = 18
-	access_heads = 19
+	access_bridge = 19
 	access_captain = 20
 	access_all_personal_lockers = 21
 	access_chapel_office = 22
@@ -64,13 +64,14 @@ for reference:
 	var/health = 100
 	var/maxhealth = 100
 	var/material/material
-	atom_flags = ATOM_FLAG_CLIMBABLE
+	atom_flags = ATOM_FLAG_NO_TEMP_CHANGE | ATOM_FLAG_CLIMBABLE
+	layer = ABOVE_WINDOW_LAYER
 
 /obj/structure/barricade/New(var/newloc, var/material_name)
 	..(newloc)
 	if(!material_name)
-		material_name = "wood"
-	material = get_material_by_name("[material_name]")
+		material_name = MATERIAL_WOOD
+	material = SSmaterials.get_material_by_name("[material_name]")
 	if(!material)
 		qdel(src)
 		return
@@ -140,6 +141,16 @@ for reference:
 	else
 		return 0
 
+/obj/structure/barricade/attack_generic(var/mob/user, var/damage, var/attack_verb)
+	health -= damage
+	attack_animation(user)
+	if(health <= 0)
+		user.visible_message("<span class='danger'>[user] [attack_verb] \the [src] apart!</span>")
+		spawn(1) dismantle()
+	else
+		user.visible_message("<span class='danger'>[user] [attack_verb] \the [src]!</span>")
+	return 1
+
 //Actual Deployable machinery stuff
 /obj/machinery/deployable
 	name = "deployable"
@@ -157,7 +168,7 @@ for reference:
 	var/health = 100.0
 	var/maxhealth = 100.0
 	var/locked = 0.0
-	req_access = list(access_mtflvl1)
+//	req_access = list(access_maint_tunnels)
 
 	New()
 		..()
@@ -269,13 +280,12 @@ for reference:
 		visible_message("<span class='warning'>BZZzZZzZZzZT</span>")
 		return 1
 
-/obj/structure/lionstatue
-	name = "Lion statue"
-	desc = "A magnificent statue of a Lion. It looks proud."
-	icon = 'icons/obj/structures.dmi'
-	icon_state = "lion"
-	anchored = 1.0
-	density = 1
-	var/health = 99999
-	var/maxhealth = 99999
-	var/material/material
+/obj/machinery/deployable/barrier/attack_generic(var/mob/user, var/damage, var/attack_verb)
+	src.health -= damage
+	attack_animation(user)
+	if(src.health <= 0)
+		user.visible_message("<span class='danger'>[user] [attack_verb] \the [src] completely!</span>")
+		spawn(1) src.explode()
+	else
+		user.visible_message("<span class='danger'>[user] [attack_verb] \the [src]!</span>")
+	return 1

@@ -44,6 +44,9 @@ NOTE: there are two lists of areas in the end of this file: centcom and station 
 	var/used_environ = 0
 
 	var/has_gravity = 1
+	var/alwaysgravity
+	var/nevergravity
+
 	var/obj/machinery/power/apc/apc = null
 	var/no_air = null
 //	var/list/lights				// list of all lights on this area
@@ -70,12 +73,10 @@ NOTE: there are two lists of areas in the end of this file: centcom and station 
 	power_equip = 0
 	power_environ = 0
 	has_gravity = 0
-//	ambience = list('sound/ambience/ambispace.ogg','sound/music/title2.ogg','sound/music/space.ogg','sound/music/main.ogg','sound/music/traitor.ogg')
+	area_flags = AREA_FLAG_EXTERNAL | AREA_FLAG_IS_NOT_PERSISTENT
+	forced_ambience = list('sound/ambience/karlskar.ogg')
 
-/area/space/update_icon()
-	return
-
-area/space/atmosalert()
+/area/space/atmosalert()
 	return
 
 /area/space/fire_alert()
@@ -98,6 +99,7 @@ area/space/atmosalert()
 	icon_state = "centcom"
 	requires_power = 0
 	dynamic_lighting = 0
+	area_flags = AREA_FLAG_IS_NOT_PERSISTENT
 
 /area/centcom/holding
 	name = "\improper Holding Facility"
@@ -123,15 +125,18 @@ area/space/atmosalert()
 /area/security/brig
 	name = "\improper Security - Brig"
 	icon_state = "brig"
+	area_flags = AREA_FLAG_RAD_SHIELDED
 
 /area/security/prison
 	name = "\improper Security - Prison Wing"
 	icon_state = "sec_prison"
+	area_flags = AREA_FLAG_RAD_SHIELDED
 
 /area/maintenance
 	area_flags = AREA_FLAG_RAD_SHIELDED
 	sound_env = TUNNEL_ENCLOSED
-	turf_initializer = /decl/turf_initializer/maintenance
+//	turf_initializer = /decl/turf_initializer/maintenance
+	forced_ambience = list('sound/ambience/maintambience.ogg')
 
 /area/rnd/xenobiology
 	name = "\improper Xenobiology Lab"
@@ -170,18 +175,6 @@ area/space/atmosalert()
 	name = "\improper Elite Mercenary Squad"
 	icon_state = "syndie-elite"
 
-/area/site90/topsideinterior
-	name = "\improper Topside Interior"
-	icon_state = "centcom"
-	requires_power = 0
-	dynamic_lighting = 0
-
-/area/site90/evacshelter
-	name = "\improper Evacuation Shelter"
-	icon_state = "centcom"
-	requires_power = 0
-	dynamic_lighting = 1
-
 ////////////
 //SHUTTLES//
 ////////////
@@ -217,7 +210,7 @@ area/space/atmosalert()
 	S.file = 'sound/ambience/shore.ogg'
 	S.repeat = 1
 	S.wait = 0
-	S.channel = 123
+	S.channel = GLOB.sound_channels.RequestChannel(/area/beach)
 	S.volume = 100
 	S.priority = 255
 	S.status = SOUND_UPDATE
@@ -256,5 +249,3 @@ area/space/atmosalert()
 					sound_to(H, S)
 
 	spawn(60) .()
-
-

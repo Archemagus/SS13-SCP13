@@ -17,25 +17,52 @@
 /obj/item/weapon/wrench
 	name = "wrench"
 	desc = "A good, durable combination wrench, with self-adjusting, universal open- and ring-end mechanisms to match a wide variety of nuts and bolts."
-	description_info = "This versatile tool is used for dismantling machine frames, anchoring or unanchoring heavy objects like vending machines and emitters, and much more. In general, if you want something to move or stop moving entirely, you ought to use a wrench on it."
-	description_fluff = "The classic open-end wrench (or spanner, if you prefer) hasn't changed significantly in shape in over 50 years, though these days they employ a bit of automated trickery to match various bolt sizes and configurations."
-	description_antag = "Not only is this handy tool good for making off with machines, but it even makes a weapon in a pinch!"
 	icon = 'icons/obj/tools.dmi'
 	icon_state = "wrench"
 	item_state = "wrench"
 	obj_flags = OBJ_FLAG_CONDUCTIBLE
 	slot_flags = SLOT_BELT
-	force = 5.0
+	force = 7
 	throwforce = 7.0
 	w_class = ITEM_SIZE_SMALL
 	origin_tech = list(TECH_MATERIAL = 1, TECH_ENGINEERING = 1)
-	matter = list(DEFAULT_WALL_MATERIAL = 150)
+	matter = list(MATERIAL_STEEL = 150)
 	center_of_mass = "x=17;y=16"
 	attack_verb = list("bashed", "battered", "bludgeoned", "whacked")
+	safely = 1
 
 /obj/item/weapon/wrench/Initialize()
-	icon_state = "wrench[pick("","_red","_black")]"
+	icon_state = "wrench[pick("","_red","_black","_green","_blue")]"
 	. = ..()
+/obj/item/weapon/wrench/power
+	name = "hand drill"
+	desc = "A simple powered hand drill. It's fitted with a bolt bit."
+	icon = 'icons/obj/items_inf.dmi'
+	icon_state = "drill_bolt"
+	item_state = "drill"
+	obj_flags = OBJ_FLAG_CONDUCTIBLE
+	slot_flags = SLOT_BELT
+	force = 8.0
+	throwforce = 8.0
+	throw_speed = 2
+	throw_range = 3
+	w_class = ITEM_SIZE_NORMAL
+	origin_tech = list(TECH_MATERIAL = 2, TECH_ENGINEERING = 3)
+	matter = list(DEFAULT_WALL_MATERIAL = 5000, "silver" = 2000)
+	center_of_mass = "x=17;y=16"
+	attack_verb = list("drilled", "screwed", "jabbed")
+	//usesound = 'sound/items/drill_use.ogg'
+
+/obj/item/weapon/wrench/power/attack_self(mob/user)
+	playsound(get_turf(user),'sound/items/change_drill.ogg',50,1)
+	var/obj/item/weapon/wirecutters/power/s_drill = new /obj/item/weapon/screwdriver/power
+	to_chat(user, "<span class='notice'>You attach the screw driver bit to [src].</span>")
+	qdel(src)
+	user.put_in_active_hand(s_drill)
+
+/obj/item/weapon/wrench/power/Initialize()
+	. = ..()
+	icon_state = "drill_bolt"
 
 /*
  * Screwdriver
@@ -43,9 +70,6 @@
 /obj/item/weapon/screwdriver
 	name = "screwdriver"
 	desc = "Your archetypal flathead screwdriver, with a nice, heavy polymer handle."
-	description_info = "This tool is used to expose or safely hide away cabling. It can open and shut the maintenance panels on vending machines, airlocks, and much more. You can also use it, in combination with a crowbar, to install or remove windows."
-	description_fluff = "Screws have not changed significantly in centuries, and neither have the drivers used to install and remove them."
-	description_antag = "In the world of breaking and entering, tools like multitools and wirecutters are the bread; the screwdriver is the butter. In a pinch, try targetting someone's eyes and stabbing them with it - it'll really hurt!"
 	icon = 'icons/obj/tools.dmi'
 	icon_state = "screwdriver"
 	obj_flags = OBJ_FLAG_CONDUCTIBLE
@@ -55,18 +79,20 @@
 	throwforce = 5.0
 	throw_speed = 3
 	throw_range = 5
-	matter = list(DEFAULT_WALL_MATERIAL = 75)
+	matter = list(MATERIAL_STEEL = 75)
 	center_of_mass = "x=16;y=7"
 	attack_verb = list("stabbed")
 	lock_picking_level = 5
+	safely = 1
+	sharp = TRUE
 
 /obj/item/weapon/screwdriver/Initialize()
 	switch(pick("red","blue","purple","brown","green","cyan","yellow"))
 		if ("red")
-			icon_state = "screwdriver1"
+			icon_state = "screwdriver2"
 			item_state = "screwdriver"
 		if ("blue")
-			icon_state = "screwdriver2"
+			icon_state = "screwdriver"
 			item_state = "screwdriver_blue"
 		if ("purple")
 			icon_state = "screwdriver3"
@@ -93,9 +119,40 @@
 		return ..()
 	if(user.zone_sel.selecting != BP_EYES && user.zone_sel.selecting != BP_HEAD)
 		return ..()
-	if((CLUMSY in user.mutations) && prob(50))
+	if((MUTATION_CLUMSY in user.mutations) && prob(50))
 		M = user
 	return eyestab(M,user)
+
+/obj/item/weapon/screwdriver/power
+	name = "hand drill"
+	desc = "A simple powered hand drill. It's fitted with a screw bit."
+	icon = 'icons/obj/items_inf.dmi'
+	icon_state = "drill_screw"
+	item_state = "drill"
+	obj_flags = OBJ_FLAG_CONDUCTIBLE
+	slot_flags = SLOT_BELT
+	force = 8
+	throwforce = 8
+	throw_speed = 2
+	throw_range = 3
+	w_class = ITEM_SIZE_NORMAL
+	origin_tech = list(TECH_MATERIAL = 2, TECH_ENGINEERING = 3)
+	matter = list(DEFAULT_WALL_MATERIAL = 5000, "silver" = 2000)
+	center_of_mass = "x=16;y=7"
+	attack_verb = list("drilled", "screwed", "jabbed","whacked")
+	hitsound = 'sound/items/drill_hit.ogg'
+	//usesound = 'sound/items/drill_use.ogg'
+
+/obj/item/weapon/screwdriver/power/attack_self(mob/user)
+	playsound(get_turf(user),'sound/items/change_drill.ogg',50,1)
+	var/obj/item/weapon/wrench/power/b_drill = new /obj/item/weapon/wrench/power
+	to_chat(user, "<span class='notice'>You attach the bolt driver bit to [src].</span>")
+	qdel(src)
+	user.put_in_active_hand(b_drill)
+
+/obj/item/weapon/screwdriver/power/Initialize()
+	. = ..()
+	icon_state = "drill_screw"
 
 /*
  * Wirecutters
@@ -103,9 +160,6 @@
 /obj/item/weapon/wirecutters
 	name = "wirecutters"
 	desc = "A special pair of pliers with cutting edges. Various brackets and manipulators built into the handle allow it to repair severed wiring."
-	description_info = "This tool will cut wiring anywhere you see it - make sure to wear insulated gloves! When used on more complicated machines or airlocks, it can not only cut cables, but repair them, as well."
-	description_fluff = "With modern alloys, today's wirecutters can snap through cables of astonishing thickness."
-	description_antag = "These cutters can be used to cripple the power anywhere on the ship. All it takes is some creativity, and being in the right place at the right time."
 	icon = 'icons/obj/tools.dmi'
 	icon_state = "cutters"
 	obj_flags = OBJ_FLAG_CONDUCTIBLE
@@ -115,20 +169,34 @@
 	throw_range = 9
 	w_class = ITEM_SIZE_SMALL
 	origin_tech = list(TECH_MATERIAL = 1, TECH_ENGINEERING = 1)
-	matter = list(DEFAULT_WALL_MATERIAL = 80)
+	matter = list(MATERIAL_STEEL = 80)
 	center_of_mass = "x=18;y=10"
 	attack_verb = list("pinched", "nipped")
 	sharp = 1
 	edge = 1
+	safely = 1
 
 /obj/item/weapon/wirecutters/Initialize()
-	if(prob(50))
-		icon_state = "cutters-y"
-		item_state = "cutters_yellow"
+	switch(pick("red","yellow","green","blue","black"))
+		if ("red")
+			icon_state = "cutters"
+			item_state = "cutters"
+		if ("yellow")
+			icon_state = "cutters_yellow"
+			item_state = "cutters_yellow"
+		if ("green")
+			icon_state = "cutters_green"
+			item_state = "cutters_green"
+		if ("blue")
+			icon_state = "cutters_blue"
+			item_state = "cutters_blue"
+		if ("black")
+			icon_state = "cutters_black"
+			item_state = "cutters_black"
 	. = ..()
 
 /obj/item/weapon/wirecutters/attack(mob/living/carbon/C as mob, mob/user as mob)
-	if(user.a_intent == I_HELP && (C.handcuffed) && (istype(C.handcuffed, /obj/item/weapon/handcuffs/cable)))
+	if(istype(C) && user.a_intent == I_HELP && (C.handcuffed) && (istype(C.handcuffed, /obj/item/weapon/handcuffs/cable)))
 		usr.visible_message("\The [usr] cuts \the [C]'s restraints with \the [src]!",\
 		"You cut \the [C]'s restraints with \the [src]!",\
 		"You hear cable being cut.")
@@ -140,6 +208,38 @@
 	else
 		..()
 
+/obj/item/weapon/wirecutters/power
+	name = "jaws of life"
+	desc = "A set of jaws of life, compressed through the magic of science. It's fitted with a cutting head."
+	icon = 'icons/obj/items_inf.dmi'
+	icon_state = "jaws_cutter"
+	item_state = "jawsoflife"
+	obj_flags = OBJ_FLAG_CONDUCTIBLE
+	slot_flags = SLOT_BELT
+	force = 15.0
+	throwforce = 10.0
+	throw_speed = 2.0
+	throw_range = 2.0
+	w_class = ITEM_SIZE_NORMAL
+	origin_tech = list(TECH_MATERIAL = 2, TECH_ENGINEERING = 3)
+	matter = list(DEFAULT_WALL_MATERIAL = 5000, "silver" = 2000)
+	center_of_mass = "x=18;y=10"
+	attack_verb = list("pinched", "nipped")
+	sharp = 1
+	edge = 1
+	//usesound = 'sound/items/jaws_cut.ogg'
+
+/obj/item/weapon/wirecutters/power/attack_self(mob/user)
+	playsound(get_turf(user), 'sound/items/change_jaws.ogg', 50, 1)
+	var/obj/item/weapon/crowbar/power/pryjaws = new /obj/item/weapon/crowbar/power
+	to_chat(user, "<span class='notice'>You attach the pry jaws to [src].</span>")
+	qdel(src)
+	user.put_in_active_hand(pryjaws)
+
+/obj/item/weapon/wirecutters/power/Initialize()
+	. = ..()
+	icon_state = "jaws_cutter"
+
 /*
  * Welding Tool
  */
@@ -149,12 +249,10 @@
 	icon_state = "welder_m"
 	item_state = "welder"
 	desc = "A heavy but portable welding gun with its own interchangeable fuel tank. It features a simple toggle switch and a port for attaching an external tank."
-	description_info = "Use in your hand to toggle the welder on and off. Hold in one hand and click with an empty hand to remove its internal tank. Click on an object to try to weld it. You can seal airlocks, attach heavy-duty machines like emitters and disposal chutes, and repair damaged walls - these are only a few of its uses. Each use of the welder will consume a unit of fuel. Be sure to wear protective equipment such as goggles, a mask, or certain voidsuit helmets to prevent eye damage. You can refill the welder with a welder tank by clicking on it, but be sure to turn it off first!"
-	description_fluff = "One of many tools of ancient design, still used in today's busy world of engineering with only minor tweaks here and there. Compact machinery and innovations in fuel storage have allowed for conveniences like this one-piece, handheld welder to exist."
-	description_antag = "You can use a welder to rapidly seal off doors, ventilation ducts, and scrubbers. It also makes for a devastating weapon. Modify it with a screwdriver and stick some metal rods on it, and you've got the beginnings of a flamethrower."
 	obj_flags = OBJ_FLAG_CONDUCTIBLE
 	slot_flags = SLOT_BELT
 	center_of_mass = "x=14;y=15"
+	waterproof = FALSE
 
 	//Amount of OUCH when it's thrown
 	force = 3.0
@@ -164,7 +262,7 @@
 	w_class = ITEM_SIZE_NORMAL
 
 	//Cost to make in the autolathe
-	matter = list(DEFAULT_WALL_MATERIAL = 70, "glass" = 30)
+	matter = list(MATERIAL_STEEL = 70, MATERIAL_GLASS = 30)
 
 	//R&D tech level
 	origin_tech = list(TECH_ENGINEERING = 1)
@@ -172,8 +270,12 @@
 	//Welding tool specific stuff
 	var/welding = 0 	//Whether or not the welding tool is off(0), on(1) or currently welding(2)
 	var/status = 1 		//Whether the welder is secured or unsecured (able to attach rods to it to make a flamethrower)
+	var/welding_resource = "welding fuel"
+	var/acti_sound = 'sound/items/WelderActivate.ogg'
+	var/deac_sound = 'sound/items/WelderDeactivate.ogg'
 
 	var/obj/item/weapon/welder_tank/tank = /obj/item/weapon/welder_tank // where the fuel is stored
+	safely = 1
 
 /obj/item/weapon/weldingtool/Initialize()
 	if(ispath(tank))
@@ -194,10 +296,13 @@
 
 /obj/item/weapon/weldingtool/examine(mob/user)
 	if(..(user, 0))
-		if(tank)
-			to_chat(user, "\icon[tank] \The [tank] contains [get_fuel()]/[tank.max_fuel] units of fuel!")
-		else
-			to_chat(user, "There is no tank attached.")
+		show_fuel(user)
+
+/obj/item/weapon/weldingtool/proc/show_fuel(var/mob/user)
+	if(tank)
+		to_chat(user, "\icon[tank] \The [tank] contains [get_fuel()]/[tank.max_fuel] units of [welding_resource]!")
+	else
+		to_chat(user, "There is no tank attached.")
 
 /obj/item/weapon/weldingtool/MouseDrop(atom/over)
 	if(!CanMouseDrop(over, usr))
@@ -207,8 +312,7 @@
 		var/obj/item/weapon/weldpack/wp = over
 		if(wp.welder)
 			to_chat(usr, "\The [wp] already has \a [wp.welder] attached.")
-		else
-			usr.drop_from_inventory(src, wp)
+		else if(usr.unEquip(src, wp))
 			wp.welder = src
 			usr.visible_message("[usr] attaches \the [src] to \the [wp].", "You attach \the [src] to \the [wp].")
 			wp.update_icon()
@@ -234,21 +338,10 @@
 		var/obj/item/stack/rods/R = W
 		R.use(1)
 		var/obj/item/weapon/flamethrower/F = new/obj/item/weapon/flamethrower(user.loc)
-		src.loc = F
+		user.drop_from_inventory(src, F)
 		F.weldtool = src
-		if (user.client)
-			user.client.screen -= src
-		if (user.r_hand == src)
-			user.remove_from_mob(src)
-		else
-			user.remove_from_mob(src)
-		src.master = F
-		src.reset_plane_and_layer()
-		user.remove_from_mob(src)
-		if (user.client)
-			user.client.screen -= src
-		src.loc = F
-		src.add_fingerprint(user)
+		master = F
+		add_fingerprint(user)
 		return
 
 	if(istype(W, /obj/item/weapon/welder_tank))
@@ -260,7 +353,8 @@
 			to_chat(user, "\The [W] is too large to fit in \the [src].")
 			return
 
-		user.drop_from_inventory(W, src)
+		if(!user.unEquip(W, src))
+			return
 		tank = W
 		user.visible_message("[user] slots \a [W] into \the [src].", "You slot \a [W] into \the [src].")
 		update_icon()
@@ -285,32 +379,40 @@
 	else
 		..()
 
+/obj/item/weapon/weldingtool/water_act()
+	if(welding && !waterproof)
+		setWelding(0)
 
 /obj/item/weapon/weldingtool/Process()
 	if(welding)
-		if(!remove_fuel(0.05))
+		if((!waterproof && submerged()) || !remove_fuel(0.05))
 			setWelding(0)
+			set_light(0)
 
-/obj/item/weapon/weldingtool/afterattack(obj/O as obj, mob/user as mob, proximity)
-	if(!proximity) return
-	if (istype(O, /obj/structure/reagent_dispensers/fueltank) && get_dist(src,O) <= 1 && !src.welding)
+/obj/item/weapon/weldingtool/afterattack(var/obj/O, var/mob/user, proximity)
+	if(!proximity)
+		return
+
+	if(istype(O, /obj/structure/reagent_dispensers/fueltank) && get_dist(src,O) <= 1 && !welding)
 		if(!tank)
-			to_chat(user, "\The [src] has no tank attached!")
+			to_chat(user, SPAN_WARNING("\The [src] has no tank attached!"))
 			return
 		O.reagents.trans_to_obj(tank, tank.max_fuel)
-		to_chat(user, "<span class='notice'>You refuel \the [tank].</span>")
+		to_chat(user, SPAN_NOTICE("You refuel \the [tank]."))
 		playsound(src.loc, 'sound/effects/refill.ogg', 50, 1, -6)
 		return
-	if (src.welding)
+
+	if(welding)
 		remove_fuel(1)
 		var/turf/location = get_turf(user)
 		if(isliving(O))
 			var/mob/living/L = O
 			L.IgniteMob()
+		else if(istype(O))
+			O.HandleObjectHeating(src, user, 700)
 		if (istype(location, /turf))
 			location.hotspot_expose(700, 50, 1)
 	return
-
 
 /obj/item/weapon/weldingtool/attack_self(mob/user as mob)
 	setWelding(!welding, usr)
@@ -319,7 +421,6 @@
 //Returns the amount of fuel in the welder
 /obj/item/weapon/weldingtool/proc/get_fuel()
 	return tank ? tank.reagents.get_reagent_amount(/datum/reagent/fuel) : 0
-
 
 //Removes fuel from the welding tool. If a mob is passed, it will perform an eyecheck on the mob. This should probably be renamed to use()
 /obj/item/weapon/weldingtool/proc/remove_fuel(var/amount = 1, var/mob/M = null)
@@ -332,7 +433,7 @@
 		return 1
 	else
 		if(M)
-			to_chat(M, "<span class='notice'>You need more welding fuel to complete this task.</span>")
+			to_chat(M, "<span class='notice'>You need more [welding_resource] to complete this task.</span>")
 		return 0
 
 /obj/item/weapon/weldingtool/proc/burn_fuel(var/amount)
@@ -367,7 +468,7 @@
 		return ITEM_SIZE_NO_CONTAINER
 	return ..()
 
-/obj/item/weapon/weldingtool/update_icon()
+/obj/item/weapon/weldingtool/on_update_icon()
 	..()
 
 	var/datum/extension/base_icon_state/bis = get_extension(src, /datum/extension/base_icon_state)
@@ -390,6 +491,11 @@
 /obj/item/weapon/weldingtool/proc/setWelding(var/set_welding, var/mob/M)
 	if(!status)	return
 
+	if(!welding && !waterproof && submerged())
+		if(M)
+			to_chat(M, "<span class='warning'>You cannot light \the [src] underwater.</span>")
+		return
+
 	var/turf/T = get_turf(src)
 	//If we're turning it on
 	if(set_welding && !welding)
@@ -398,6 +504,8 @@
 				to_chat(M, "<span class='notice'>You switch the [src] on.</span>")
 			else if(T)
 				T.visible_message("<span class='danger'>\The [src] turns on.</span>")
+			set_light(0.2, 0.1, 1, 1, LIGHT_COLOR_FLARE)
+			playsound(loc, acti_sound, 50, 1)
 			src.force = 15
 			src.damtype = "fire"
 			welding = 1
@@ -405,7 +513,7 @@
 			START_PROCESSING(SSobj, src)
 		else
 			if(M)
-				to_chat(M, "<span class='notice'>You need more welding fuel to complete this task.</span>")
+				to_chat(M, "<span class='notice'>You need more [welding_resource] to complete this task.</span>")
 			return
 	//Otherwise
 	else if(!set_welding && welding)
@@ -414,6 +522,8 @@
 			to_chat(M, "<span class='notice'>You switch \the [src] off.</span>")
 		else if(T)
 			T.visible_message("<span class='warning'>\The [src] turns off.</span>")
+		set_light(0)
+		playsound(loc, deac_sound, 50, 1)
 		src.force = 3
 		src.damtype = "brute"
 		src.welding = 0
@@ -427,6 +537,8 @@
 		var/mob/living/carbon/human/H = user
 		var/obj/item/organ/internal/eyes/E = H.internal_organs_by_name[BP_EYES]
 		if(!E)
+			return
+		if(!BP_IS_ROBOTIC(E))
 			return
 		var/safety = H.eyecheck()
 		switch(safety)
@@ -447,11 +559,7 @@
 		if(safety<FLASH_PROTECTION_MAJOR)
 			if(E.damage > 10)
 				to_chat(user, "<span class='warning'>Your eyes are really starting to hurt. This can't be good for you!</span>")
-
-			if (E.damage >= E.min_broken_damage)
-				to_chat(H, "<span class='danger'>You go blind!</span>")
-				H.sdisabilities |= BLIND
-			else if (E.damage >= E.min_bruised_damage)
+			if (E.damage >= E.min_bruised_damage)
 				to_chat(H, "<span class='danger'>You go blind!</span>")
 				H.eye_blind = 5
 				H.eye_blurry = 5
@@ -467,6 +575,7 @@
 	w_class = ITEM_SIZE_SMALL
 	var/max_fuel = 20
 	var/can_remove = 1
+	safely = 1
 
 /obj/item/weapon/welder_tank/Initialize()
 	create_reagents(max_fuel)
@@ -487,7 +596,7 @@
 	item_state = "welder"
 	desc = "A smaller welder, meant for quick or emergency use."
 	origin_tech = list(TECH_ENGINEERING = 2)
-	matter = list(DEFAULT_WALL_MATERIAL = 15, "glass" = 5)
+	matter = list(MATERIAL_STEEL = 15, MATERIAL_GLASS = 5)
 	w_class = ITEM_SIZE_SMALL
 	tank = /obj/item/weapon/welder_tank/mini
 
@@ -504,7 +613,7 @@
 	item_state = "welder"
 	desc = "A heavy-duty portable welder, made to ensure it won't suddenly go cold on you."
 	origin_tech = list(TECH_ENGINEERING = 2)
-	matter = list(DEFAULT_WALL_MATERIAL = 70, "glass" = 60)
+	matter = list(MATERIAL_STEEL = 70, MATERIAL_GLASS = 60)
 	w_class = ITEM_SIZE_LARGE
 	tank = /obj/item/weapon/welder_tank/large
 
@@ -521,7 +630,7 @@
 	desc = "A sizable welding tool with room to accomodate the largest of fuel tanks."
 	w_class = ITEM_SIZE_HUGE
 	origin_tech = list(TECH_ENGINEERING = 3)
-	matter = list(DEFAULT_WALL_MATERIAL = 70, "glass" = 120)
+	matter = list(MATERIAL_STEEL = 70, MATERIAL_GLASS = 120)
 	tank = /obj/item/weapon/welder_tank/huge
 
 /obj/item/weapon/welder_tank/huge
@@ -537,7 +646,7 @@
 	desc = "This welding tool feels heavier in your possession than is normal. There appears to be no external fuel port."
 	w_class = ITEM_SIZE_LARGE
 	origin_tech = list(TECH_ENGINEERING = 4, TECH_PHORON = 3)
-	matter = list(DEFAULT_WALL_MATERIAL = 70, "glass" = 120)
+	matter = list(MATERIAL_STEEL = 70, MATERIAL_GLASS = 120)
 	tank = /obj/item/weapon/welder_tank/experimental
 
 /obj/item/weapon/welder_tank/experimental
@@ -568,8 +677,12 @@
 		var/mob/living/carbon/human/H = M
 		var/obj/item/organ/external/S = H.organs_by_name[target_zone]
 
-		if(!S || !(S.robotic >= ORGAN_ROBOT) || user.a_intent != I_HELP)
+		if(!S || !BP_IS_ROBOTIC(S) || user.a_intent != I_HELP)
 			return ..()
+
+		if(BP_IS_BRITTLE(S))
+			to_chat(user, "<span class='warning'>\The [M]'s [S.name] is hard and brittle - \the [src]  cannot repair it.</span>")
+			return 1
 
 		if(!welding)
 			to_chat(user, "<span class='warning'>You'll need to turn [src] on to patch the damage on [M]'s [S.name]!</span>")
@@ -588,22 +701,23 @@
 /obj/item/weapon/crowbar
 	name = "crowbar"
 	desc = "A heavy crowbar of solid steel, good and solid in your hand."
-	description_info = "Crowbars have countless uses: click on floor tiles to pry them loose. Use alongside a screwdriver to install or remove windows. Force open emergency shutters, or depowered airlocks. Open the panel of an unlocked APC. Pry a computer's circuit board free. And much more!"
-	description_fluff = "As is the case with most standard-issue tools, crowbars are a simple and timeless design, the only difference being that advanced materials like plasteel have made them uncommonly tough."
-	description_antag = "Need to bypass a bolted door? You can use a crowbar to pry the electronics out of an airlock, provided that it has no power and has been welded shut."
 	icon = 'icons/obj/tools.dmi'
 	icon_state = "crowbar"
 	obj_flags = OBJ_FLAG_CONDUCTIBLE
 	slot_flags = SLOT_BELT
-	force = 7.0
+	force = 14
+	attack_cooldown = 2*DEFAULT_WEAPON_COOLDOWN
+	melee_accuracy_bonus = -20
 	throwforce = 7.0
 	throw_range = 3
 	item_state = "crowbar"
 	w_class = ITEM_SIZE_NORMAL
 	origin_tech = list(TECH_ENGINEERING = 1)
-	matter = list(DEFAULT_WALL_MATERIAL = 140)
+	matter = list(MATERIAL_STEEL = 140)
 	center_of_mass = "x=16;y=20"
 	attack_verb = list("attacked", "bashed", "battered", "bludgeoned", "whacked")
+	hitsound = 'sound/weapons/crowbarhit.ogg'
+	safely = 1
 
 /obj/item/weapon/crowbar/red
 	icon_state = "red_crowbar"
@@ -618,21 +732,51 @@
 	throwforce = 6.0
 	throw_range = 5
 	w_class = ITEM_SIZE_SMALL
-	matter = list(DEFAULT_WALL_MATERIAL = 80)
+	matter = list(MATERIAL_STEEL = 80)
 
 /obj/item/weapon/crowbar/prybar/Initialize()
 	icon_state = "prybar[pick("","_red","_green","_aubergine","_blue")]"
 	. = ..()
+
+/obj/item/weapon/crowbar/power
+	name = "jaws of life"
+	desc = "A set of jaws of life, compressed through the magic of science. It's fitted with a prying head."
+	icon = 'icons/obj/items_inf.dmi'
+	icon_state = "jaws_pry"
+	item_state = "jawsoflife"
+	obj_flags = OBJ_FLAG_CONDUCTIBLE
+	slot_flags = SLOT_BELT
+	force = 15.0
+	throwforce = 10.0
+	throw_speed = 2.0
+	throw_range = 2.0
+	w_class = ITEM_SIZE_NORMAL
+	origin_tech = list(TECH_MATERIAL = 2, TECH_ENGINEERING = 3)
+	matter = list(DEFAULT_WALL_MATERIAL = 5000, "silver" = 2000)
+	center_of_mass = "x=18;y=10"
+	attack_verb = list("attacked", "bashed", "battered", "bludgeoned", "whacked")
+	//usesound = 'sound/items/jaws_cut.ogg'
+
+/obj/item/weapon/crowbar/power/attack_self(mob/user)
+	playsound(get_turf(user), 'sound/items/change_jaws.ogg', 50, 1)
+	var/obj/item/weapon/wirecutters/power/cutjaws = new /obj/item/weapon/wirecutters/power
+	to_chat(user, "<span class='notice'>You attach the cutting jaws to [src].</span>")
+	qdel(src)
+	user.put_in_active_hand(cutjaws)
+
+/obj/item/weapon/crowbar/power/Initialize()
+	. = ..()
+	icon_state = "jaws_pry"
 
 /*
  * Combitool
  */
 
 
-/*/obj/item/weapon/combitool
+/obj/item/weapon/combitool
 	name = "combi-tool"
 	desc = "It even has one of those nubbins for doing the thingy."
-	icon = 'icons/obj/items.dmi'
+	icon = 'icons/obj/tools.dmi'
 	icon_state = "combitool"
 	w_class = ITEM_SIZE_SMALL
 
@@ -646,6 +790,7 @@
 		)
 	var/list/tools = list()
 	var/current_tool = 1
+	safely = 1
 
 /obj/item/weapon/combitool/examine()
 	..()
@@ -685,4 +830,4 @@
 	if(!resolved && tool && target)
 		tool.afterattack(target,user,1)
 	if(tool)
-		tool.loc = src*/
+		tool.loc = src

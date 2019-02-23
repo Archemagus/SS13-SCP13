@@ -20,10 +20,13 @@
 	var/denied = 0
 	var/build_eff = 1
 	var/eat_eff = 1
+	var/ingredients = 0 //How many processable ingredients are stored inside.
+	var/capacity = 10   //How many ingredients can we store?
 	var/list/products = list(
 		"Food" = list(
 			/obj/item/weapon/reagent_containers/food/drinks/milk/smallcarton = 30,
-			/obj/item/weapon/reagent_containers/food/snacks/meat = 50),
+			/obj/item/weapon/reagent_containers/food/drinks/milk = 50,
+			/obj/item/weapon/reagent_containers/food/snacks/meat/syntiflesh = 50),
 		"Nutrients" = list(
 			/obj/item/weapon/reagent_containers/glass/bottle/eznutrient = 60,
 			/obj/item/weapon/reagent_containers/glass/bottle/left4zed = 120,
@@ -57,7 +60,7 @@
 /obj/machinery/biogenerator/on_reagent_change()			//When the reagents change, change the icon as well.
 	update_icon()
 
-/obj/machinery/biogenerator/update_icon()
+/obj/machinery/biogenerator/on_update_icon()
 	if(state == BG_NO_BEAKER)
 		icon_state = "biogen-empty"
 	else if(state == BG_READY || state == BG_COMPLETE)
@@ -76,50 +79,37 @@
 	if(istype(O, /obj/item/weapon/reagent_containers/glass))
 		if(beaker)
 			to_chat(user, "<span class='notice'>]The [src] is already loaded.</span>")
-		else
-			user.remove_from_mob(O)
-			O.forceMove(src)
+		else if(user.unEquip(O, src))
 			beaker = O
 			state = BG_READY
 			updateUsrDialog()
 	else if(processing)
 		to_chat(user, "<span class='notice'>\The [src] is currently processing.</span>")
+	else if(ingredients >= capacity)
+		to_chat(user, "<span class='notice'>\The [src] is already full! Activate it.</span>")
 	else if(istype(O, /obj/item/weapon/storage/plants))
 		var/obj/item/weapon/storage/plants/P = O
-		var/i = 0
-		for(var/obj/item/weapon/reagent_containers/food/snacks/grown/G in contents)
-			i++
-		if(i >= 10)
-			to_chat(user, "<span class='notice'>\The [src] is already full! Activate it.</span>")
-		else
-			var/hadPlants = 0
-			for(var/obj/item/weapon/reagent_containers/food/snacks/grown/G in P.contents)
-				hadPlants = 1
-				P.remove_from_storage(G, src)
-				i++
-				if(i >= 10)
-					to_chat(user, "<span class='notice'>You fill \the [src] to its capacity.</span>")
-					break
-			if(!hadPlants)
-				to_chat(user, "<span class='notice'>\The [P] has no produce inside.</span>")
-			else if(i < 10)
-				to_chat(user, "<span class='notice'>You empty \the [P] into \the [src].</span>")
+		var/hadPlants = 0
+		for(var/obj/item/weapon/reagent_containers/food/snacks/grown/G in P.contents)
+			hadPlants = 1
+			P.remove_from_storage(G, src, 1) //No UI updates until we are all done.
+			ingredients++
+			if(ingredients >= capacity)
+				to_chat(user, "<span class='notice'>You fill \the [src] to its capacity.</span>")
+				break
+		P.finish_bulk_removal() //Now do the UI stuff once.
+		if(!hadPlants)
+			to_chat(user, "<span class='notice'>\The [P] has no produce inside.</span>")
+		else if(ingredients < capacity)
+			to_chat(user, "<span class='notice'>You empty \the [P] into \the [src].</span>")
 
 
 	else if(!istype(O, /obj/item/weapon/reagent_containers/food/snacks/grown))
 		to_chat(user, "<span class='notice'>You cannot put this in \the [src].</span>")
-	else
-		var/i = 0
-		for(var/obj/item/weapon/reagent_containers/food/snacks/grown/G in contents)
-			i++
-		if(i >= 10)
-			to_chat(user, "<span class='notice'>\The [src] is full! Activate it.</span>")
-		else
-			user.remove_from_mob(O)
-			O.forceMove(src)
-			to_chat(user, "<span class='notice'>You put \the [O] in \the [src]</span>")
+	else if(user.unEquip(O, src))
+		ingredients++
+		to_chat(user, "<span class='notice'>You put \the [O] in \the [src]</span>")
 	update_icon()
-	return
 
 /**
  *  Display the NanoUI window for the vending machine.
@@ -145,7 +135,7 @@
 				path = current_content[c_product]
 				var/atom/A = path
 				name = initial(A.name)
-				cost = current_content[path]
+				cost = round(current_content[path]/build_eff)
 				listed_products.Add(list(list(
 					"product_index" = c_product,
 					"name" = name,
@@ -154,7 +144,7 @@
 				"type_name" = type_name,
 				"products" = listed_products)))
 		data["types"] = listed_types
-	ui = GLOB.nanomanager.try_update_ui(user, src, ui_key, ui, data, force_open)
+	ui = SSnano.try_update_ui(user, src, ui_key, ui, data, force_open)
 	if (!ui)
 		ui = new(user, src, ui_key, "biogenerator.tmpl", "Biogenerator", 440, 600)
 		ui.set_initial_data(data)
@@ -199,13 +189,14 @@
 	var/S = 0
 	for(var/obj/item/weapon/reagent_containers/food/snacks/grown/I in contents)
 		S += 5
+		ingredients--
 		if(I.reagents.get_reagent_amount(/datum/reagent/nutriment) < 0.1)
 			points += 1
 		else points += I.reagents.get_reagent_amount(/datum/reagent/nutriment) * 10 * eat_eff
 		qdel(I)
 	if(S)
 		state = BG_PROCESSING
-		GLOB.nanomanager.update_uis(src)
+		SSnano.update_uis(src)
 		update_icon()
 		playsound(src.loc, 'sound/machines/blender.ogg', 50, 1)
 		use_power(S * 30)
@@ -221,7 +212,7 @@
 	var/cost = products[type][path]
 	cost = round(cost/build_eff)
 	points -= cost
-	GLOB.nanomanager.update_uis(src)
+	SSnano.update_uis(src)
 	update_icon()
 	sleep(30)
 	var/atom/movable/result = new path

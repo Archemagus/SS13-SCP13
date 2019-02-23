@@ -120,7 +120,7 @@
 	if(connected_port)
 		update_flag |= 2
 
-	var/tank_pressure = air_contents.return_pressure()
+	var/tank_pressure = return_pressure()
 	if(tank_pressure < 10)
 		update_flag |= 4
 	else if(tank_pressure < ONE_ATMOSPHERE)
@@ -135,7 +135,7 @@
 	else
 		return 0
 
-/obj/machinery/portable_atmospherics/canister/update_icon()
+/obj/machinery/portable_atmospherics/canister/on_update_icon()
 /*
 update_flag
 1 = holding
@@ -147,7 +147,7 @@ update_flag
 */
 
 	if (src.destroyed)
-		src.overlays = 0
+		overlays.Cut()
 		src.icon_state = text("[]-1", src.canister_color)
 		return
 
@@ -157,7 +157,7 @@ update_flag
 	if(check_change()) //Returns 1 if no change needed to icons.
 		return
 
-	src.overlays = 0
+	overlays.Cut()
 
 	if(update_flag & 1)
 		overlays += "can-open"
@@ -222,6 +222,8 @@ update_flag
 			var/returnval = pump_gas_passive(src, air_contents, environment, transfer_moles)
 			if(returnval >= 0)
 				src.update_icon()
+				if(holding)
+					holding.queue_icon_update()
 
 	if(air_contents.return_pressure() < 1)
 		can_label = 1
@@ -252,7 +254,7 @@ update_flag
 	..()
 
 /obj/machinery/portable_atmospherics/canister/attackby(var/obj/item/weapon/W as obj, var/mob/user as mob)
-	if(!isWrench(W) && !istype(W, /obj/item/weapon/tank) && !istype(W, /obj/item/device/analyzer) && !istype(W, /obj/item/device/pda))
+	if(!isWrench(W) && !istype(W, /obj/item/weapon/tank) && !istype(W, /obj/item/device/analyzer) && !istype(W, /obj/item/modular_computer/pda))
 		visible_message("<span class='warning'>\The [user] hits \the [src] with \a [W]!</span>")
 		src.health -= W.force
 		healthcheck()
@@ -272,7 +274,7 @@ update_flag
 
 	..()
 
-	GLOB.nanomanager.update_uis(src) // Update all NanoUIs attached to src
+	SSnano.update_uis(src) // Update all NanoUIs attached to src
 
 /obj/machinery/portable_atmospherics/canister/attack_ai(var/mob/user as mob)
 	ui_interact(user)
@@ -296,7 +298,7 @@ update_flag
 	if (holding)
 		data["holdingTank"] = list("name" = holding.name, "tankPressure" = round(holding.air_contents.return_pressure()))
 
-	ui = GLOB.nanomanager.try_update_ui(user, src, ui_key, ui, data, force_open)
+	ui = SSnano.try_update_ui(user, src, ui_key, ui, data, force_open)
 	if (!ui)
 		ui = new(user, src, ui_key, "canister.tmpl", "Canister", 480, 400)
 		ui.set_initial_data(data)
@@ -464,3 +466,38 @@ update_flag
 	..()
 	src.air_contents.adjust_gas("hydrogen", MolesForPressure())
 	src.update_icon()
+
+// Spawn debug tanks.
+/obj/machinery/portable_atmospherics/canister/helium
+	name = "\improper Canister \[He\]"
+	icon_state = "black"
+	canister_color = "black"
+	can_label = 0
+
+/obj/machinery/portable_atmospherics/canister/helium/New()
+	..()
+	air_contents.adjust_gas("helium", MolesForPressure())
+	update_icon()
+
+/obj/machinery/portable_atmospherics/canister/methyl_bromide
+	name = "\improper Canister \[CH3Br\]"
+	icon_state = "black"
+	canister_color = "black"
+	can_label = 0
+
+/obj/machinery/portable_atmospherics/canister/methyl_bromide/New()
+	..()
+	air_contents.adjust_gas("methyl_bromide", MolesForPressure())
+	update_icon()
+
+/obj/machinery/portable_atmospherics/canister/chlorine
+	name = "\improper Canister \[Cl\]"
+	icon_state = "black"
+	canister_color = "black"
+	can_label = 0
+
+/obj/machinery/portable_atmospherics/canister/chlorine/New()
+	..()
+	air_contents.adjust_gas("chlorine", MolesForPressure())
+	update_icon()
+// End debug tanks.

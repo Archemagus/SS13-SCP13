@@ -4,9 +4,6 @@
 	icon_state = "flpainter"
 	item_state = "fl_painter"
 	desc = "A slender and none-too-sophisticated device capable of painting, erasing, and applying decals to most types of floors. It can also paint walls."
-	description_info = "Use this item in your hand to access a menu in which you may change the type of decal, applied direction, and color. Click any accessible tile on the floor to apply your choice."
-	description_fluff = "This ubiquitous maintenance-grade paintgun isn't as fancy or convenient as modern consumer models, but with an internal synthesizer it never runs out of pigment!"
-	description_antag = "This thing would be perfect for vandalism. Could you write your name in the halls?"
 
 	var/decal =        "remove all decals"
 	var/paint_dir =    "precise"
@@ -54,29 +51,31 @@
 		"command blue" = 	COLOR_COMMAND_BLUE,
 		"cyan" =        	COLOR_CYAN,
 		"green" =      		COLOR_GREEN,
-		"NT red" =   		COLOR_NT_RED,
+		"bottle green" =	COLOR_PALE_BTL_GREEN,
+		"nanotrasen red" =  COLOR_NT_RED,
 		"orange" = 			COLOR_ORANGE,
 		"pale orange" =   	COLOR_PALE_ORANGE,
 		"red" = 			COLOR_RED,
 		"sky blue" =   		COLOR_DEEP_SKY_BLUE,
 		"titanium" =     	COLOR_TITANIUM,
-		"hull blue" = 		COLOR_HULL,
 		"violet" = 			COLOR_VIOLET,
 		"white" =        	COLOR_WHITE,
-		"yellow" =       	COLOR_AMBER
+		"yellow" =       	COLOR_AMBER,
+		"hull blue" = 		COLOR_HULL,
+		"bulkhead black" =	COLOR_GUNMETAL
 		)
 
 
-/obj/item/device/floor_painter/afterattack(var/atom/A, var/mob/user, proximity, params)
+/obj/item/device/floor_painter/resolve_attackby(var/atom/A, var/mob/user, proximity, params)
 	if(!proximity)
 		return
 
+	add_fingerprint(user)
+
 	if(color_picker)
-		paint_colour = A.color
+		paint_colour = A.get_color()
 		to_chat(usr, "<span class='notice'>You set \the [src] to paint with <font color='[paint_colour]'>a new colour</font>.</span>")
 		return
-
-	playsound(get_turf(src), 'sound/effects/spray3.ogg', 30, 1, -6)
 
 	var/turf/simulated/wall/W = A
 	if(istype(W))
@@ -111,7 +110,7 @@
 		return
 
 	var/turf/simulated/floor/F = A
-	if(!istype(F))
+	if(!istype(F) || !F.flooring)
 		to_chat(user, "<span class='warning'>\The [src] can only be used on floors, walls or certain airlocks.</span>")
 		return
 
@@ -165,6 +164,7 @@
 	if(decal_data["coloured"] && paint_colour)
 		painting_colour = paint_colour
 
+	playsound(get_turf(src), 'sound/effects/spray3.ogg', 30, 1, -6)
 	new painting_decal(F, painting_dir, painting_colour)
 
 /obj/item/device/floor_painter/attack_self(var/mob/user)

@@ -12,10 +12,11 @@
 
 	var/icon_keyboard = "generic_key"
 	var/icon_screen = "generic"
-	var/light_range_on = 2
-	var/light_power_on = 1
+	var/light_max_bright_on = 0.2
+	var/light_inner_range_on = 0.1
+	var/light_outer_range_on = 2
 	var/overlay_layer
-	atom_flags = ATOM_FLAG_CLIMBABLE
+	atom_flags = ATOM_FLAG_NO_TEMP_CHANGE | ATOM_FLAG_CLIMBABLE
 	clicksound = "keyboard"
 
 /obj/machinery/computer/New()
@@ -63,7 +64,7 @@
 		set_broken()
 	..()
 
-/obj/machinery/computer/update_icon()
+/obj/machinery/computer/on_update_icon()
 	overlays.Cut()
 	if(stat & NOPOWER)
 		set_light(0)
@@ -71,7 +72,7 @@
 			overlays += image(icon,"[icon_keyboard]_off", overlay_layer)
 		return
 	else
-		set_light(light_range_on, light_power_on)
+		set_light(light_max_bright_on, light_inner_range_on, light_outer_range_on, 2, light_color)
 
 	if(stat & BROKEN)
 		overlays += image(icon,"[icon_state]_broken", overlay_layer)
@@ -95,6 +96,7 @@
 		playsound(src.loc, 'sound/items/Screwdriver.ogg', 50, 1)
 		if(do_after(user, 20, src))
 			var/obj/structure/computerframe/A = new /obj/structure/computerframe( src.loc )
+			A.set_dir(src.dir)
 			var/obj/item/weapon/circuitboard/M = new circuit( A )
 			A.circuit = M
 			A.anchored = 1

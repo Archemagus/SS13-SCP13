@@ -1,3 +1,3 @@
 /image/Destroy()
 	..()
-	return QDEL_HINT_IWILLGC
+	return QDEL_HINT_HARDDEL

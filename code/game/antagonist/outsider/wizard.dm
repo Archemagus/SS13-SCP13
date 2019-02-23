@@ -1,9 +1,9 @@
-var/datum/antagonist/wizard/wizards
+GLOBAL_DATUM_INIT(wizards, /datum/antagonist/wizard, new)
 
 /datum/antagonist/wizard
 	id = MODE_WIZARD
-	role_text = "Space Wizard"
-	role_text_plural = "Space Wizards"
+	role_text = ANTAG_WIZARD
+	role_text_plural = ANTAG_WIZARD + "s"
 	landmark_id = "wizard"
 	welcome_text = "You will find a list of available spells in your spell book. Choose your magic arsenal carefully.<br>In your pockets you will find a teleport scroll. Use it as needed."
 	flags = ANTAG_OVERRIDE_JOB | ANTAG_CLEAR_EQUIPMENT | ANTAG_CHOOSE_NAME | ANTAG_VOTABLE | ANTAG_SET_APPEARANCE
@@ -17,11 +17,6 @@ var/datum/antagonist/wizard/wizards
 
 	faction = "wizard"
 
-
-/datum/antagonist/wizard/New()
-	..()
-	wizards = src
-
 /datum/antagonist/wizard/create_objectives(var/datum/mind/wizard)
 
 	if(!..())
@@ -30,20 +25,20 @@ var/datum/antagonist/wizard/wizards
 	var/kill
 	var/escape
 	var/steal
-	var/hijack
+//	var/hijack
 
-	switch(rand(1,100))
+	switch(rand(1,99))
 		if(1 to 30)
 			escape = 1
 			kill = 1
 		if(31 to 60)
 			escape = 1
 			steal = 1
-		if(61 to 99)
+		else
 			kill = 1
 			steal = 1
-		else
-			hijack = 1
+//		else
+//			hijack = 1
 
 	if(kill)
 		var/datum/objective/assassinate/kill_objective = new
@@ -59,10 +54,10 @@ var/datum/antagonist/wizard/wizards
 		var/datum/objective/survive/survive_objective = new
 		survive_objective.owner = wizard
 		wizard.objectives |= survive_objective
-	if(hijack)
-		var/datum/objective/hijack/hijack_objective = new
-		hijack_objective.owner = wizard
-		wizard.objectives |= hijack_objective
+//	if(hijack)
+//		var/datum/objective/hijack/hijack_objective = new
+//		hijack_objective.owner = wizard
+//		wizard.objectives |= hijack_objective
 	return
 
 /datum/antagonist/wizard/update_antag_mob(var/datum/mind/wizard)

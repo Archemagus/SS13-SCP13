@@ -19,7 +19,7 @@
 	icon_locked = "medical1"
 	icon_opened = "medicalopen"
 	icon_off = "medicaloff"
-	req_access = list(access_medicalchem)
+	req_access = list(access_medical_equip)
 
 /obj/structure/closet/secure_closet/medical1/WillContain()
 	return list(
@@ -42,7 +42,7 @@
 	icon_locked = "medical1"
 	icon_opened = "medicalopen"
 	icon_off = "medicaloff"
-	req_access = list(access_medicalgen)
+	req_one_access = list(access_medical, access_robotics)
 
 /obj/structure/closet/secure_closet/medical2/WillContain()
 	return list(
@@ -50,9 +50,36 @@
 		/obj/item/clothing/mask/breath/medical = 3
 	)
 
+/obj/structure/closet/secure_closet/medical1_minimal
+	name = "medical equipment closet"
+	desc = "Filled with medical junk."
+	icon_state = "medical1"
+	icon_closed = "medical"
+	icon_locked = "medical1"
+	icon_opened = "medicalopen"
+	icon_off = "medicaloff"
+	req_access = list(access_medical_equip)
+
+/obj/structure/closet/secure_closet/medical1_minimal/WillContain()
+	return list(
+		/obj/item/weapon/storage/box/autoinjectors,
+		/obj/item/weapon/storage/box/syringes,
+		/obj/item/weapon/reagent_containers/dropper = 1,
+		/obj/item/weapon/reagent_containers/glass/beaker = 1,
+		/obj/item/weapon/reagent_containers/glass/bottle/hyronalin = 1,
+		/obj/item/weapon/storage/firstaid/regular,
+		/obj/item/weapon/storage/firstaid/adv,
+		/obj/item/weapon/storage/firstaid/fire,
+		/obj/item/weapon/storage/firstaid/o2,
+		/obj/item/weapon/storage/firstaid/toxin,
+		/obj/item/weapon/storage/box/masks,
+		/obj/item/clothing/gloves/latex/nitrile,
+		/obj/item/clothing/accessory/stethoscope
+	)
+
 /obj/structure/closet/secure_closet/medical3
 	name = "medical doctor's locker"
-	req_access = list(access_medicalequip)
+	req_access = list(access_medical_equip)
 	icon_state = "securemed1"
 	icon_closed = "securemed"
 	icon_locked = "securemed1"
@@ -61,15 +88,23 @@
 
 /obj/structure/closet/secure_closet/medical3/WillContain()
 	return list(
-		/obj/item/clothing/under/rank/medical/scrubs/blue,
+		new/datum/atom_creator/weighted(list(/obj/item/weapon/storage/backpack/medic, /obj/item/weapon/storage/backpack/satchel/med)),
+		new/datum/atom_creator/simple(/obj/item/weapon/storage/backpack/dufflebag/med, 50),
+		/obj/item/clothing/under/rank/nursesuit,
+		/obj/item/clothing/head/nursehat,
+		/obj/item/clothing/under/rank/medical,
+		/obj/item/clothing/under/rank/nurse,
+		/obj/item/clothing/under/rank/orderly,
 		/obj/item/clothing/suit/storage/toggle/labcoat,
+		/obj/item/clothing/suit/storage/toggle/fr_jacket,
 		/obj/item/clothing/shoes/white,
-		/obj/item/device/flashlight/pen,
-		/obj/item/clothing/accessory/stethoscope,
-		/obj/item/device/radio,
-		/obj/item/weapon/storage/belt/medical/emt
+		/obj/item/device/radio/headset/headset_med,
+		/obj/item/taperoll/medical,
+		/obj/item/weapon/storage/belt/medical/emt,
+		RANDOM_SCRUBS,
+		RANDOM_SCRUBS
 	)
-/*
+
 /obj/structure/closet/secure_closet/paramedic
 	name = "paramedic locker"
 	desc = "Supplies for a first responder."
@@ -91,14 +126,13 @@
 	    /obj/item/clothing/suit/storage/toggle/fr_jacket,
 	    /obj/item/clothing/suit/storage/toggle/labcoat,
 	    /obj/item/device/radio/headset/headset_med,
-	    /obj/item/weapon/cartridge/medical,
 	    /obj/item/device/flashlight,
 	    /obj/item/weapon/tank/emergency/oxygen/engi,
 	    /obj/item/clothing/glasses/hud/health,
 	    /obj/item/device/healthanalyzer,
 	    /obj/item/device/radio/off,
 	    /obj/random/medical,
-	    /obj/item/weapon/crowbar,
+	    /obj/item/weapon/crowbar/prybar,
 	    /obj/item/weapon/extinguisher/mini,
 	    /obj/item/weapon/storage/box/freezer,
 	    /obj/item/clothing/accessory/storage/white_vest,
@@ -115,7 +149,7 @@
 
 /obj/structure/closet/secure_closet/CMO/WillContain()
 	return list(
-		new/datum/atom_creator/weighted(list(/obj/item/weapon/storage/backpack/medic, /obj/item/weapon/storage/backpack/satchel_med)),
+		new/datum/atom_creator/weighted(list(/obj/item/weapon/storage/backpack/medic, /obj/item/weapon/storage/backpack/satchel/med)),
 		new/datum/atom_creator/simple(/obj/item/weapon/storage/backpack/dufflebag/med, 50),
 		/obj/item/clothing/suit/bio_suit/cmo,
 		/obj/item/clothing/head/bio_hood/cmo,
@@ -123,7 +157,6 @@
 		/obj/item/clothing/under/rank/chief_medical_officer,
 		/obj/item/clothing/suit/storage/toggle/labcoat/cmo,
 		/obj/item/clothing/suit/storage/toggle/labcoat/cmoalt,
-		/obj/item/weapon/cartridge/cmo,
 		/obj/item/clothing/gloves/latex,
 		/obj/item/clothing/shoes/brown,
 		/obj/item/device/radio/headset/heads/cmo,
@@ -131,7 +164,7 @@
 		/obj/item/weapon/reagent_containers/hypospray/vial,
 		RANDOM_SCRUBS
 	)
-*/
+
 /obj/structure/closet/secure_closet/chemical
 	name = "chemical closet"
 	desc = "Store dangerous chemicals in here."
@@ -140,7 +173,7 @@
 	icon_locked = "medical1"
 	icon_opened = "medicalopen"
 	icon_off = "medicaloff"
-	req_access = list(access_mtflvl2)
+	req_access = list(access_chemistry)
 
 /obj/structure/closet/secure_closet/chemical/WillContain()
 	return list(
@@ -148,7 +181,7 @@
 		/obj/item/weapon/reagent_containers/glass/beaker/cryoxadone,
 		/obj/random/medical = 12
 	)
-/*
+
 /obj/structure/closet/secure_closet/medical_wall
 	name = "first aid closet"
 	desc = "It's a secure wall-mounted storage unit for first aid supplies."
@@ -180,10 +213,11 @@
 		/obj/item/clothing/under/rank/chaplain,
 		/obj/item/clothing/shoes/black,
 		/obj/item/clothing/suit/chaplain_hoodie,
-		/obj/item/weapon/storage/fancy/candle_box = 2,
+		/obj/item/weapon/storage/candle_box = 2,
 		/obj/item/weapon/deck/tarot,
 		/obj/item/weapon/reagent_containers/food/drinks/bottle/holywater,
 		/obj/item/weapon/nullrod,
+		/obj/item/weapon/storage/bible,
 		/obj/item/clothing/suit/straight_jacket,
 		/obj/item/weapon/reagent_containers/glass/bottle/stoxin,
 		/obj/item/weapon/reagent_containers/syringe,
@@ -195,6 +229,7 @@
 		/obj/item/device/tape/random = 3,
 		/obj/item/device/camera,
 		/obj/item/toy/therapy_blue,
+		/obj/item/weapon/storage/belt/general
 	)
 
 /obj/structure/closet/secure_closet/virology
@@ -247,4 +282,3 @@
 		/obj/item/clothing/under/rank/psych/turtleneck,
 		/obj/item/clothing/under/rank/psych
 	)
-*/

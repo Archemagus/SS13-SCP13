@@ -5,6 +5,7 @@
 	icon_state = "closed"
 	density = 1
 	w_class = ITEM_SIZE_NO_CONTAINER
+	layer = 2
 
 	var/icon_closed = "closed"
 	var/icon_opened = "open"
@@ -20,8 +21,8 @@
 	var/breakout = 0 //if someone is currently breaking out. mutex
 	var/storage_capacity = 2 * MOB_MEDIUM //This is so that someone can't pack hundreds of items in a locker/crate
 							  //then open it in a populated area to crash clients.
-	var/open_sound = 'sound/effects/locker_open.ogg'
-	var/close_sound = 'sound/effects/locker_close.ogg'
+	var/open_sound = 'sound/effects/closet_open.ogg'
+	var/close_sound = 'sound/effects/closet_close.ogg'
 
 	var/storage_types = CLOSET_STORAGE_ALL
 	var/setup = CLOSET_CAN_BE_WELDED
@@ -31,11 +32,23 @@
 	var/opened = FALSE
 	var/locked = FALSE
 
+	var/code1[8]
+	var/code2[8]
+	var/validate = 0
+	var/codelen
+
 /obj/structure/closet/Initialize()
 	..()
 
 	if((setup & CLOSET_HAS_LOCK))
 		verbs += /obj/structure/closet/proc/togglelock_verb
+
+		codelen = rand(7,10)
+		code1.len = codelen
+		code2.len = codelen
+		for(var/i=1 to codelen)
+			code1[i] = rand(0,9)
+			code2[i] = rand(0,9)
 
 	return INITIALIZE_HINT_LATELOAD
 
@@ -114,7 +127,7 @@
 	src.dump_contents()
 
 	src.opened = 1
-	playsound(src.loc, open_sound, 15, 1, -3)
+	playsound(src.loc, open_sound, 50, 1, -3)
 	density = 0
 	update_icon()
 	return 1
@@ -128,7 +141,7 @@
 	store_contents()
 	src.opened = 0
 
-	playsound(src.loc, close_sound, 25, 0, -3)
+	playsound(src.loc, close_sound, 50, 0, -3)
 	density = 1
 
 	update_icon()
@@ -224,13 +237,13 @@
 				A.ex_act(severity + 1)
 			qdel(src)
 		if(2)
-			if(prob(50))
+			if(prob(70))
 				for (var/atom/movable/A in src)
 					A.forceMove(src.loc)
 					A.ex_act(severity + 1)
 				qdel(src)
 		if(3)
-			if(prob(5))
+			if(prob(40))
 				for(var/atom/movable/A in src)
 					A.forceMove(src.loc)
 				qdel(src)
@@ -257,7 +270,7 @@
 
 	return
 
-/obj/structure/closet/attackby(obj/item/weapon/W as obj, mob/user as mob)
+/obj/structure/closet/attackby(obj/item/W as obj, mob/user as mob)
 	if(src.opened)
 		if(istype(W, /obj/item/grab))
 			var/obj/item/grab/G = W
@@ -274,14 +287,14 @@
 			var/obj/item/weapon/storage/laundry_basket/LB = W
 			var/turf/T = get_turf(src)
 			for(var/obj/item/I in LB.contents)
-				LB.remove_from_storage(I, T)
+				LB.remove_from_storage(I, T, 1)
+			LB.finish_bulk_removal()
 			user.visible_message("<span class='notice'>[user] empties \the [LB] into \the [src].</span>", \
 								 "<span class='notice'>You empty \the [LB] into \the [src].</span>", \
 								 "<span class='notice'>You hear rustling of clothes.</span>")
 			return
 
-		if(usr.drop_item())
-			W.forceMove(loc)
+		if(user.unEquip(W, loc))
 			W.pixel_x = 0
 			W.pixel_y = 0
 			W.pixel_z = 0
@@ -295,7 +308,7 @@
 			playsound(src.loc, 'sound/weapons/blade1.ogg', 50, 1)
 			playsound(src.loc, "sparks", 50, 1)
 			open()
-	else if(istype(W, /obj/item/weapon/packageWrap))
+	else if(istype(W, /obj/item/stack/package_wrap))
 		return
 	else if(isWelder(W) && (setup & CLOSET_CAN_BE_WELDED))
 		var/obj/item/weapon/weldingtool/WT = W
@@ -309,7 +322,17 @@
 		src.update_icon()
 		user.visible_message("<span class='warning'>\The [src] has been [welded?"welded shut":"unwelded"] by \the [user].</span>", blind_message = "You hear welding.", range = 3)
 	else if(setup & CLOSET_HAS_LOCK)
-		src.togglelock(user, W)
+		if(isMultimeter(W))
+			var/obj/item/device/multitool/multimeter/O = W
+			if(O.mode != METER_CHECKING)
+				to_chat(user, "<span class='notice'>Переключите мультиметр.</span>")
+			else
+				if (user.skill_check(SKILL_ELECTRICAL, SKILL_ADEPT))
+					src.interact(usr)
+				else
+					to_chat(user, "<span class='notice'>Вы не умеете работать с этим замком.</span>")
+		else
+			src.togglelock(user, W)
 	else
 		src.attack_hand(user)
 
@@ -387,7 +410,7 @@
 	else
 		to_chat(usr, "<span class='warning'>This mob type can't use this verb.</span>")
 
-/obj/structure/closet/update_icon()//Putting the welded stuff in update_icon() so it's easy to overwrite for special cases (Fridges, cabinets, and whatnot)
+/obj/structure/closet/on_update_icon()//Putting the welded stuff in update_icon() so it's easy to overwrite for special cases (Fridges, cabinets, and whatnot)
 	overlays.Cut()
 
 	if(!opened)
@@ -403,14 +426,11 @@
 	else
 		icon_state = icon_opened
 
-/obj/structure/closet/attack_generic(var/mob/user, var/damage, var/attack_message = "destroys", var/wallbreaker)
-	if(!damage || !wallbreaker)
-		return
-	attack_animation(user)
-	visible_message("<span class='danger'>[user] [attack_message] the [src]!</span>")
-	dump_contents()
-	spawn(1) qdel(src)
-	return 1
+/obj/structure/closet/take_damage(damage)
+	health -= damage
+	if(health <= 0)
+		dump_contents()
+		qdel(src)
 
 /obj/structure/closet/proc/req_breakout()
 	if(opened)
@@ -443,7 +463,7 @@
 			return
 
 		playsound(src.loc, 'sound/effects/grillehit.ogg', 100, 1)
-		animate_shake()
+		shake_animation()
 		add_fingerprint(escapee)
 
 	//Well then break it!
@@ -452,7 +472,7 @@
 	visible_message("<span class='danger'>\The [escapee] successfully broke out of \the [src]!</span>")
 	playsound(src.loc, 'sound/effects/grillehit.ogg', 100, 1)
 	break_open()
-	animate_shake()
+	shake_animation()
 
 /obj/structure/closet/proc/break_open()
 	welded = 0
@@ -465,12 +485,6 @@
 		var/obj/structure/bigDelivery/BD = loc
 		BD.unwrap()
 	open()
-
-/obj/structure/closet/proc/animate_shake()
-	var/init_px = pixel_x
-	var/shake_dir = pick(-1, 1)
-	animate(src, transform=turn(matrix(), 8*shake_dir), pixel_x=init_px + 2*shake_dir, time=1)
-	animate(transform=null, pixel_x=init_px, time=6, easing=ELASTIC_EASING)
 
 /obj/structure/closet/onDropInto(var/atom/movable/AM)
 	return
@@ -499,6 +513,9 @@
 		return FALSE
 
 	add_fingerprint(user)
+
+	if(!id_card)
+		id_card = user.GetIdCard()
 
 	if(!user.IsAdvancedToolUser())
 		to_chat(user, FEEDBACK_YOU_LACK_DEXTERITY)
@@ -562,3 +579,73 @@
 	locked = FALSE
 	desc += " It appears to be broken."
 	return TRUE
+
+/obj/structure/closet/interact(mob/user)
+	src.add_fingerprint(user)
+	var/dat = ""
+	dat += "<a href='?src=\ref[src];check=1'>Проверить замок</a><hr>"
+	for(var/i = 1 to codelen)
+		dat += "<a href='?src=\ref[src];inc=[i]'>+</a>"
+	dat += "<br>"
+	for(var/i = 1 to codelen)
+		dat += "[code2[i]]"
+	dat += "<br>"
+	for(var/i = 1 to codelen)
+		dat += "<a href='?src=\ref[src];dec=[i]'>-</a>"
+	user.set_machine(src)
+	var/datum/browser/popup = new(user, "closet", "[name]")
+	popup.set_content(dat)
+	popup.open(1)
+
+/obj/structure/closet/Topic(href, href_list)
+	if(!ishuman(usr))
+		return
+
+	var/mob/living/carbon/human/user = usr
+	var/obj/item/device/multitool/multimeter/W = user.get_active_hand()
+	user.set_machine(src)
+
+	if(href_list["check"])
+		if(!W.in_use)
+			W.in_use = TRUE
+		else
+			return
+
+		validate = 0
+
+		if(W.mode != METER_CHECKING)
+			to_chat(usr, "<span class='notice'>Переключите мультиметр.</span>")
+			return
+
+		to_chat(usr, "<span class='notice'>Провер&#255;ем замок...</span>")
+		for(var/i = 1 to codelen)
+			if(do_after(user, 10, src))
+				if(code2[i] == code1[i])
+					validate++
+					to_chat(usr, "<span class='notice'>Ключ подходит.</span>")
+					playsound(W.loc, 'sound/machines/mbeep.ogg', 30, 1, frequency = rand(50000, 55000))
+				else
+					to_chat(usr, "<span class='notice'>Ключ не подходит.</span>")
+		W.in_use = FALSE
+
+		if(validate < codelen)
+			return
+
+		locked = !locked
+		update_icon()
+		visible_message("<span class='warning'>[user] has [locked ? "locked" : "hacked"] [src]!</span>")
+		return
+
+	if(href_list["inc"])
+		var/inc = text2num(href_list["inc"])
+		code2[inc]++
+		if(code2[inc] > 9)
+			code2[inc] = 0
+		interact(user)
+
+	if(href_list["dec"])
+		var/inc = text2num(href_list["dec"])
+		code2[inc]--
+		if(code2[inc] < 0)
+			code2[inc] = 9
+		interact(user)

@@ -1,4 +1,4 @@
-/var/server_name = "SCP-13"
+/var/server_name = "Infinity RU"
 
 /var/game_id = null
 /hook/global_init/proc/generate_gameid()
@@ -36,7 +36,7 @@
 
 	var/list/match = list()
 
-	for(var/mob/M in GLOB.mob_list)
+	for(var/mob/M in SSmobs.mob_list)
 		if(restrict_type && !istype(M, restrict_type))
 			continue
 		var/strings = list(M.name, M.ckey)
@@ -64,29 +64,30 @@
 
 	return match
 
-#define RECOMMENDED_VERSION 511
+#define RECOMMENDED_VERSION 512
 /world/New()
 	//set window title
 	name = "[server_name] - [GLOB.using_map.full_name]"
 
 	//logs
 	SetupLogs()
-	var/date_string = time2text(world.realtime, "YYYY/MM-Month/DD-Day")
-	href_logfile = "data/logs/[date_string] hrefs.htm"
-	diary = "data/logs/[date_string].log"
-	rustg_log_write(diary, "[log_end]\n[log_end]\nStarting up. (ID: [game_id]) [time2text(world.timeofday, "hh:mm.ss")][log_end]\n---------------------[log_end]")
+	var/date_string = time2text(world.realtime, "YYYY/MM/DD")
+	href_logfile = file("data/logs/[date_string] hrefs.htm")
+	diary = file("data/logs/[date_string].log")
+	diary << "[log_end]\n[log_end]\nStarting up. (ID: [game_id]) [time2text(world.timeofday, "hh:mm.ss")][log_end]\n---------------------[log_end]"
 	changelog_hash = md5('html/changelog.html')					//used for telling if the changelog has changed recently
+	inf_changelog_hash = md5('html/changelog_infinity.html')
 
 	if(byond_version < RECOMMENDED_VERSION)
-		WRITE_LOG(world.log, "Your server's byond version does not meet the recommended requirements for this server. Please update BYOND")
+		world.log << "Your server's byond version does not meet the recommended requirements for this server. Please update BYOND"
 
 	if(config && config.server_name != null && config.server_suffix && world.port > 0)
 		// dumb and hardcoded but I don't care~
 		config.server_name += " #[(world.port % 1000) / 100]"
 
 	if(config && config.log_runtime)
-		var/runtime_log = "data/logs/runtime/[date_string]_[time2text(world.timeofday, "hh:mm")]_[game_id].log"
-		rustg_log_write(runtime_log, "Game [game_id] starting up at [time2text(world.timeofday, "hh:mm.ss")]")
+		var/runtime_log = file("data/logs/runtime/[date_string]_[time2text(world.timeofday, "hh:mm")]_[game_id].log")
+		runtime_log << "Game [game_id] starting up at [time2text(world.timeofday, "hh:mm.ss")]"
 		log = runtime_log
 
 	callHook("startup")
@@ -96,34 +97,11 @@
 
 	. = ..()
 
-	TgsNew()
-	TgsInitializationComplete()
-
-
 #ifdef UNIT_TEST
 	log_unit_test("Unit Tests Enabled. This will destroy the world when testing is complete.")
 	load_unit_test_changes()
 #endif
-
-	// Set up roundstart seed list.
-	plant_controller = new()
-
-	// This is kinda important. Set up details of what the hell things are made of.
-	populate_material_list()
-
-	if(config.generate_map)
-		GLOB.using_map.perform_map_generation()
-	GLOB.using_map.build_exoplanets()
-
-	// Create robolimbs for chargen.
-	populate_robolimb_list()
-
 	Master.Initialize(10, FALSE)
-
-#ifdef UNIT_TEST
-	spawn(1)
-		initialize_unit_tests()
-#endif
 
 #undef RECOMMENDED_VERSION
 
@@ -131,9 +109,8 @@ var/world_topic_spam_protect_ip = "0.0.0.0"
 var/world_topic_spam_protect_time = world.timeofday
 
 /world/Topic(T, addr, master, key)
-	TGS_TOPIC
+	diary << "TOPIC: \"[T]\", from:[addr], master:[master], key:[key][log_end]"
 
-	rustg_log_write(diary, "TOPIC: \"[T]\", from:[addr], master:[master], key:[key][log_end]")
 	if (T == "ping")
 		var/x = 1
 		for (var/client/C)
@@ -210,9 +187,10 @@ var/world_topic_spam_protect_time = world.timeofday
 		L["dm_version"] = DM_VERSION // DreamMaker version compiled in
 		L["dd_version"] = world.byond_version // DreamDaemon version running on
 
-		if(GLOB.revdata.commit)
-			L["revision"] = GLOB.revdata.commit
-			L["date"] = GLOB.revdata.date
+		if(revdata.revision)
+			L["revision"] = revdata.revision
+			L["branch"] = revdata.branch
+			L["date"] = revdata.date
 		else
 			L["revision"] = "unknown"
 
@@ -452,6 +430,7 @@ var/world_topic_spam_protect_time = world.timeofday
 			return "Save failed"
 		ban_unban_log_save("[input["id"]] has permabanned [C.ckey]. - Reason: [input["reason"]] - This is a ban until appeal.")
 		notes_add(target,"[input["id"]] has permabanned [C.ckey]. - Reason: [input["reason"]] - This is a ban until appeal.",input["id"])
+		send2adminirc("[input["id"]] has permabanned [C.ckey]. - Reason: [input["reason"]] - This is a ban until appeal.")
 		qdel(C)
 
 	else if(copytext(T,1,19) == "prometheus_metrics")
@@ -473,20 +452,20 @@ var/world_topic_spam_protect_time = world.timeofday
 
 
 /world/Reboot(var/reason)
-	/*spawn(0)
+	spawn(0)
 		sound_to(world, sound(pick('sound/AI/newroundsexy.ogg','sound/misc/apcdestroyed.ogg','sound/misc/bangindonk.ogg')))// random end sounds!! - LastyBatsy
 
-		*/
+	Master.Shutdown()
 
 	if(config.server)	//if you set a server location in config.txt, it sends you there instead of trying to reconnect to the same world address. -- NeoFite
 		for(var/client/C in GLOB.clients)
-			C << link("byond://[config.server]")
+			to_chat(C, link("byond://[config.server]"))
 
 	if(config.wait_for_sigusr1_reboot && reason != 3)
 		text2file("foo", "reboot_called")
 		to_world("<span class=danger>World reboot waiting for external scripts. Please be patient.</span>")
 		return
-	TgsReboot()
+
 	..(reason)
 
 /world/Del()
@@ -504,8 +483,8 @@ var/world_topic_spam_protect_time = world.timeofday
 	var/list/Lines = file2list("data/mode.txt")
 	if(Lines.len)
 		if(Lines[1])
-			master_mode = Lines[1]
-			log_misc("Saved mode is '[master_mode]'")
+			SSticker.master_mode = Lines[1]
+			log_misc("Saved mode is '[SSticker.master_mode]'")
 
 /world/proc/save_mode(var/the_mode)
 	var/F = file("data/mode.txt")
@@ -517,7 +496,7 @@ var/world_topic_spam_protect_time = world.timeofday
 	return 1
 
 /world/proc/load_motd()
-	join_motd = file2text("config/motd.txt")
+	join_motd = sanitize_a0(file2text("config/motd.txt"))
 
 
 /proc/load_configuration()
@@ -577,21 +556,23 @@ var/world_topic_spam_protect_time = world.timeofday
 	var/s = ""
 
 	if (config && config.server_name)
-		s += "<b>[config.server_name]</b> &#8212; "
+		s += "<b>[config.server_name]</b>: "
 
 	s += "<b>[station_name()]</b>";
 	s += " ("
-	s += "<a href=\"https://scp13.site/\">" //Change this to wherever you want the hub to link to.
+	s += "<a href=\"https://infinity-ss13.info\">" //Change this to wherever you want the hub to link to.
 //	s += "[game_version]"
-	s += "SCP13 Website"  //Replace this with something else. Or ever better, delete it and uncomment the game version.
+	s += "Forum"  //Replace this with something else. Or ever better, delete it and uncomment the game version.
+	s += "</a>|"
+	s += "<a href=\"https://discord.gg/N4atUkH\">" //Change this to wherever you want the hub to link to.
+	s += "Discord"  //Replace this with something else. Or ever better, delete it and uncomment the game version.
 	s += "</a>"
 	s += ")"
 
 	var/list/features = list()
 
-	if(ticker)
-		if(master_mode)
-			features += master_mode
+	if(SSticker.master_mode)
+		features += SSticker.master_mode
 	else
 		features += "<b>STARTING</b>"
 
@@ -628,7 +609,7 @@ var/world_topic_spam_protect_time = world.timeofday
 		src.status = s
 
 #define WORLD_LOG_START(X) WRITE_FILE(GLOB.world_##X##_log, "\n\nStarting up round ID [game_id]. [time_stamp()]\n---------------------")
-#define WORLD_SETUP_LOG(X) GLOB.world_##X##_log = "[GLOB.log_directory]/[#X].log" ; WORLD_LOG_START(X)
+#define WORLD_SETUP_LOG(X) GLOB.world_##X##_log = file("[GLOB.log_directory]/[#X].log") ; WORLD_LOG_START(X)
 /world/proc/SetupLogs()
 	GLOB.log_directory = "data/logs/[time2text(world.realtime, "YYYY/MM/DD")]/round-"
 	if(game_id)
@@ -642,15 +623,15 @@ var/world_topic_spam_protect_time = world.timeofday
 #undef WORLD_SETUP_LOG
 #undef WORLD_LOG_START
 
-#define FAILED_DB_CONNECTION_CUTOFF 5
+#define FAILED_DB_CONNECTION_CUTOFF 25
 var/failed_db_connections = 0
 var/failed_old_db_connections = 0
 
 /hook/startup/proc/connectDB()
 	if(!setup_database_connection())
-		WRITE_LOG(world.log, "Your server failed to establish a connection with the feedback database.")
+		world.log << "Your server failed to establish a connection with the feedback database."
 	else
-		WRITE_LOG(world.log, "Feedback database connection established.")
+		world.log << "Feedback database connection established."
 	return 1
 
 proc/setup_database_connection()
@@ -673,7 +654,7 @@ proc/setup_database_connection()
 		failed_db_connections = 0	//If this connection succeeded, reset the failed connections counter.
 	else
 		failed_db_connections++		//If it failed, increase the failed connections counter.
-		WRITE_LOG(world.log, dbcon.ErrorMsg())
+		world.log << dbcon.ErrorMsg()
 
 	return .
 
@@ -687,12 +668,11 @@ proc/establish_db_connection()
 	else
 		return 1
 
-
 /hook/startup/proc/connectOldDB()
 	if(!setup_old_database_connection())
-		WRITE_LOG(world.log, "Your server failed to establish a connection with the SQL database.")
+		world.log << "Your server failed to establish a connection with the SQL database."
 	else
-		WRITE_LOG(world.log, "SQL database connection established.")
+		world.log << "SQL database connection established."
 	return 1
 
 //These two procs are for the old database, while it's being phased out. See the tgstation.sql file in the SQL folder for more information.
@@ -716,7 +696,7 @@ proc/setup_old_database_connection()
 		failed_old_db_connections = 0	//If this connection succeeded, reset the failed connections counter.
 	else
 		failed_old_db_connections++		//If it failed, increase the failed connections counter.
-		WRITE_LOG(world.log, dbcon.ErrorMsg())
+		world.log << dbcon.ErrorMsg()
 
 	return .
 

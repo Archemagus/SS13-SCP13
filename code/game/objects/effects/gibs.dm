@@ -21,6 +21,7 @@
 	Initialize()
 		..()
 		Gib(loc)
+		return INITIALIZE_HINT_QDEL
 
 	proc/Gib(atom/location)
 		if(gibtypes.len != gibamounts.len || gibamounts.len != gibdirections.len)
@@ -57,4 +58,4 @@
 						if(directions.len)
 							gib.streak(directions)
 
-		qdel_after(src, 30 SECONDS)
+		qdel(src)

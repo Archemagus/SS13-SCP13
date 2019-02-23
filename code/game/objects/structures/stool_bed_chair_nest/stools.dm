@@ -18,13 +18,16 @@ var/global/list/stool_cache = list() //haha stool
 /obj/item/weapon/stool/padded
 	icon_state = "stool_padded_preview" //set for the map
 
+/obj/item/weapon/stool/padded/red/New(var/newloc,var/newmaterial)
+	..(newloc,"steel","leather")
+
 /obj/item/weapon/stool/New(var/newloc, var/new_material, var/new_padding_material)
 	..(newloc)
 	if(!new_material)
-		new_material = DEFAULT_WALL_MATERIAL
-	material = get_material_by_name(new_material)
+		new_material = MATERIAL_STEEL
+	material = SSmaterials.get_material_by_name(new_material)
 	if(new_padding_material)
-		padding_material = get_material_by_name(new_padding_material)
+		padding_material = SSmaterials.get_material_by_name(new_padding_material)
 	if(!istype(material))
 		qdel(src)
 		return
@@ -32,7 +35,7 @@ var/global/list/stool_cache = list() //haha stool
 	update_icon()
 
 /obj/item/weapon/stool/padded/New(var/newloc, var/new_material)
-	..(newloc, "steel", "carpet")
+	..(newloc, MATERIAL_STEEL, MATERIAL_CARPET)
 
 /obj/item/weapon/stool/bar
 	name = "bar stool"
@@ -44,9 +47,9 @@ var/global/list/stool_cache = list() //haha stool
 	icon_state = "bar_stool_padded_preview"
 
 /obj/item/weapon/stool/bar/padded/New(var/newloc, var/new_material)
-	..(newloc, "steel", "carpet")
+	..(newloc, MATERIAL_STEEL, MATERIAL_CARPET)
 
-/obj/item/weapon/stool/update_icon()
+/obj/item/weapon/stool/on_update_icon()
 	// Prep icon.
 	icon_state = ""
 	// Base icon.
@@ -75,7 +78,7 @@ var/global/list/stool_cache = list() //haha stool
 		desc = "A stool. Apply butt with care. It's made of [material.use_name]."
 
 /obj/item/weapon/stool/proc/add_padding(var/padding_type)
-	padding_material = get_material_by_name(padding_type)
+	padding_material = SSmaterials.get_material_by_name(padding_type)
 	update_icon()
 
 /obj/item/weapon/stool/proc/remove_padding()
@@ -89,9 +92,7 @@ var/global/list/stool_cache = list() //haha stool
 		user.visible_message("<span class='danger'>[user] breaks [src] over [target]'s back!</span>")
 		user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 		user.do_attack_animation(target)
-		user.remove_from_mob(src)
-		dismantle()
-		qdel(src)
+		dismantle() //This deletes self.
 
 		var/blocked = target.run_armor_check(hit_zone, "melee")
 		target.Weaken(10 * blocked_mult(blocked))
@@ -132,12 +133,11 @@ var/global/list/stool_cache = list() //haha stool
 			return
 		var/obj/item/stack/C = W
 		if(C.get_amount() < 1) // How??
-			user.drop_from_inventory(C)
 			qdel(C)
 			return
 		var/padding_type //This is awful but it needs to be like this until tiles are given a material var.
 		if(istype(W,/obj/item/stack/tile/carpet))
-			padding_type = "carpet"
+			padding_type = MATERIAL_CARPET
 		else if(istype(W,/obj/item/stack/material))
 			var/obj/item/stack/material/M = W
 			if(M.material && (M.material.flags & MATERIAL_PADDING))

@@ -1,4 +1,4 @@
-var/datum/antagonist/deathsquad/deathsquad
+GLOBAL_DATUM_INIT(deathsquad, /datum/antagonist/deathsquad, new)
 
 /datum/antagonist/deathsquad
 	id = MODE_DEATHSQUAD
@@ -19,11 +19,6 @@ var/datum/antagonist/deathsquad/deathsquad
 
 	var/deployed = 0
 
-/datum/antagonist/deathsquad/New(var/no_reference)
-	..()
-	if(!no_reference)
-		deathsquad = src
-
 /datum/antagonist/deathsquad/attempt_spawn()
 	if(..())
 		deployed = 1
@@ -40,7 +35,7 @@ var/datum/antagonist/deathsquad/deathsquad
 	player.equip_to_slot_or_del(new /obj/item/clothing/shoes/swat(player), slot_shoes)
 	player.equip_to_slot_or_del(new /obj/item/clothing/glasses/thermal(player), slot_glasses)
 	player.equip_to_slot_or_del(new /obj/item/clothing/mask/gas/swat(player), slot_wear_mask)
-	if (player.mind == leader) // Congrats, you're the Nuclear Weapons Specialist
+	if (player.mind == leader)
 		player.equip_to_slot_or_del(new /obj/item/weapon/pinpointer(player), slot_l_store)
 		player.equip_to_slot_or_del(new /obj/item/weapon/disk/nuclear(player), slot_r_store)
 	else
@@ -48,6 +43,7 @@ var/datum/antagonist/deathsquad/deathsquad
 	player.equip_to_slot_or_del(new /obj/item/weapon/gun/projectile/revolver/mateba(player), slot_belt)
 	player.equip_to_slot_or_del(new /obj/item/weapon/gun/energy/pulse_rifle(player), slot_r_hand)
 	player.equip_to_slot_or_del(new /obj/item/weapon/rig/ert/assetprotection(player), slot_back)
+	player.equip_to_slot_or_del(new /obj/item/weapon/melee/energy/sword(player), slot_l_hand)
 	player.implant_loyalty(player)
 
 	var/obj/item/weapon/card/id/id = create_id("AMTF Hammer Down", player)

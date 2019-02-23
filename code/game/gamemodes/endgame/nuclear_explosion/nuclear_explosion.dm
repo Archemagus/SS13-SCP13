@@ -16,8 +16,8 @@
 	cinematic.screen_loc = "1,0"
 
 /datum/universal_state/nuclear_explosion/OnEnter()
-	if(ticker && ticker.mode)
-		ticker.mode.explosion_in_progress = 1
+	if(SSticker.mode)
+		SSticker.mode.explosion_in_progress = 1
 
 	start_cinematic_intro()
 
@@ -41,18 +41,18 @@
 
 	sleep(200)
 
-	if(ticker && ticker.mode)
-		ticker.mode.station_was_nuked = 1
-		ticker.mode.explosion_in_progress = 0
-		if(!ticker.mode.check_finished())//If the mode does not deal with the nuke going off so just reboot because everyone is stuck as is
+	if(SSticker.mode)
+		SSticker.mode.station_was_nuked = 1
+		SSticker.mode.explosion_in_progress = 0
+		if(!SSticker.mode.check_finished())//If the mode does not deal with the nuke going off so just reboot because everyone is stuck as is
 			universe_has_ended = 1
 
 /datum/universal_state/nuclear_explosion/OnExit()
-	if(ticker && ticker.mode)
-		ticker.mode.explosion_in_progress = 0
+	if(SSticker.mode)
+		SSticker.mode.explosion_in_progress = 0
 
 /datum/universal_state/nuclear_explosion/proc/dust_mobs(var/list/affected_z_levels)
-	for(var/mob/living/L in GLOB.mob_list)
+	for(var/mob/living/L in SSmobs.mob_list)
 		var/turf/T = get_turf(L)
 		if(T && (T.z in affected_z_levels))
 			//this is needed because dusting resets client screen 1.5 seconds after being called (delayed due to the dusting animation)

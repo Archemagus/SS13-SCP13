@@ -5,8 +5,8 @@
 /obj/item/weapon/autopsy_scanner
 	name = "autopsy scanner"
 	desc = "Used to gather information on wounds."
-	icon = 'icons/obj/autopsy_scanner.dmi'
-	icon_state = ""
+	icon = 'icons/obj/surgery.dmi'
+	icon_state = "autopsy_scanner"
 	obj_flags = OBJ_FLAG_CONDUCTIBLE
 	w_class = ITEM_SIZE_SMALL
 	origin_tech = list(TECH_MATERIAL = 1, TECH_BIO = 1)
@@ -176,7 +176,7 @@
 	if(!S)
 		to_chat(usr, "<span class='warning'>You can't scan this body part.</span>")
 		return
-	if(!S.open())
+	if(!S.how_open())
 		to_chat(usr, "<span class='warning'>You have to cut [S] open first!</span>")
 		return
 	M.visible_message("<span class='notice'>\The [user] scans the wounds on [M]'s [S.name] with [src]</span>")
@@ -187,3 +187,6 @@
 		chemtraces += initial(R.name)
 
 	return 1
+
+/obj/item/weapon/autopsy_scanner/attack_self(mob/user)
+	print_data(user)

@@ -6,7 +6,6 @@
 	var/id = null
 	var/active = 0
 	var/operating = 0
-	var/sleep_time = 10
 	anchored = 1.0
 	use_power = 1
 	idle_power_usage = 2
@@ -28,7 +27,7 @@
 /obj/machinery/button/attack_ai(mob/user as mob)
 	return attack_hand(user)
 
-/obj/machinery/button/attackby(obj/item/weapon/W, mob/user as mob)
+/obj/machinery/button/attackby(obj/item/W, mob/user as mob)
 	return attack_hand(user)
 
 /obj/machinery/button/attack_hand(mob/living/user)
@@ -46,13 +45,12 @@
 	use_power(5)
 	update_icon()
 	wifi_sender.activate(user)
-	if (sleep_time)
-		sleep(sleep_time)
+	sleep(10)
 	active = 0
 	update_icon()
 	operating = 0
 
-/obj/machinery/button/update_icon()
+/obj/machinery/button/on_update_icon()
 	if(active)
 		icon_state = "launcheract"
 	else
@@ -63,7 +61,7 @@
 	icon = 'icons/obj/power.dmi'
 	icon_state = "light0"
 
-/obj/machinery/button/switch/update_icon()
+/obj/machinery/button/switch/on_update_icon()
 	icon_state = "light[active]"
 
 //alternate button with the same functionality, except has a door control sprite instead
@@ -71,7 +69,7 @@
 	icon = 'icons/obj/stationobjs.dmi'
 	icon_state = "doorctrl0"
 
-/obj/machinery/button/alternate/update_icon()
+/obj/machinery/button/alternate/on_update_icon()
 	if(active)
 		icon_state = "doorctrl0"
 	else
@@ -97,7 +95,7 @@
 	icon = 'icons/obj/power.dmi'
 	icon_state = "light0"
 
-/obj/machinery/button/toggle/switch/update_icon()
+/obj/machinery/button/toggle/switch/on_update_icon()
 	icon_state = "light[active]"
 
 
@@ -107,7 +105,7 @@
 	icon = 'icons/obj/stationobjs.dmi'
 	icon_state = "doorctrl0"
 
-/obj/machinery/button/toggle/alternate/update_icon()
+/obj/machinery/button/toggle/alternate/on_update_icon()
 	if(active)
 		icon_state = "doorctrl0"
 	else
@@ -159,7 +157,7 @@
 				8 = shock
 				16 = door safties  */
 
-/obj/machinery/button/toggle/door/update_icon()
+/obj/machinery/button/toggle/door/on_update_icon()
 	if(active)
 		icon_state = "[initial(icon_state)]"
 	else
@@ -217,7 +215,7 @@
 	. = ..()
 	radio_connection = radio_controller.add_object(src, frequency, RADIO_ATMOSIA)
 
-/obj/machinery/button/toggle/valve/update_icon()
+/obj/machinery/button/toggle/valve/on_update_icon()
 	if(!active)
 		icon_state = "launcherbtt"
 	else
@@ -231,6 +229,26 @@
 	signal.frequency = frequency
 	signal.data["tag"] = id
 	signal.data["command"] = "valve_toggle"
-	radio_connection.post_signal(src, signal, filter = RADIO_ATMOSIA)
+	radio_connection.post_signal(src, signal, radio_filter = RADIO_ATMOSIA)
 	active = !active
 	update_icon()
+
+/obj/machinery/button/toggle/valve/nacelle
+	name = "Reactive Engine Fuel Control"
+	frequency = 1490
+
+/obj/machinery/button/toggle/valve/nacelle/first
+	name = "First Reactive Engine Fuel Control"
+	id = "RE1F"
+
+/obj/machinery/button/toggle/valve/nacelle/second
+	name = "Second Reactive Engine Fuel Control"
+	id = "RE2F"
+
+/obj/machinery/button/toggle/valve/nacelle/third
+	name = "Third Reactive Engine Fuel Control"
+	id = "RE3F"
+
+/obj/machinery/button/toggle/valve/nacelle/fourth
+	name = "Fourth Reactive Engine Fuel Control"
+	id = "RE4F"

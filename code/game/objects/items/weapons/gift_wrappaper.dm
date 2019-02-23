@@ -51,28 +51,53 @@
 
 /obj/item/weapon/a_gift/attack_self(mob/M as mob)
 	var/gift_type = pick(
-		/obj/item/weapon/storage/wallet,
-		/obj/item/weapon/storage/photo_album,
 		/obj/item/weapon/storage/box/snappops,
 		/obj/item/weapon/storage/fancy/crayons,
-		/obj/item/weapon/storage/backpack/holding,
 		/obj/item/weapon/storage/belt/champion,
 		/obj/item/weapon/soap/deluxe,
-		/obj/item/weapon/pickaxe/silver,
 		/obj/item/weapon/pen/invisible,
 		/obj/item/weapon/lipstick/random,
 		/obj/item/weapon/grenade/smokebomb,
-		/obj/item/weapon/corncob,
+		/obj/item/weapon/grenade/fake,
+		/obj/item/weapon/stamp/clown,
+		/obj/item/clothing/shoes/slippers_worn,
 		/obj/item/weapon/contraband/poster,
-		/obj/item/weapon/book/manual/barman_recipes,
-		/obj/item/weapon/book/manual/chef_recipes,
 		/obj/item/weapon/bikehorn,
 		/obj/item/weapon/beach_ball,
 		/obj/item/weapon/beach_ball/holoball,
+		/obj/item/weapon/computer_hardware/tesla_link,
 		/obj/item/toy/water_balloon,
+		/obj/item/clothing/mask/gas/radical,
+		/obj/item/weapon/marshalling_wand,
 		/obj/item/toy/blink,
 		/obj/item/toy/crossbow,
 		/obj/item/weapon/gun/projectile/revolver/capgun,
+		/obj/item/device/flashlight/slime,
+		/obj/item/weapon/storage/fancy/crackers,
+		/obj/item/weapon/toy/xmas_cracker,
+		/obj/item/stack/flag/solgov,
+		/obj/item/airbag,
+		/obj/item/clothing/mask/gas/clown_hat,
+		/obj/item/clothing/mask/gas/sexyclown,
+		/obj/item/clothing/mask/gas/sexymime,
+		/obj/item/clothing/mask/gas/mime,
+		/obj/item/toy/desk/newtoncradle,
+		/obj/item/toy/desk/fan,
+		/obj/item/toy/desk/officetoy,
+		/obj/item/toy/desk/dippingbird,
+		/obj/item/pizzabox/margherita,
+		/obj/item/clothing/head/philosopher_wig,
+		/obj/item/device/kit/paint/ripley/death,
+		/obj/item/clothing/mask/gas/clown_hat,
+		/obj/item/clothing/mask/fakemoustache,
+		/obj/item/clothing/mask/luchador/tecnicos,
+		/obj/item/clothing/head/festive,
+		/obj/item/clothing/head/helmet/daft_punk,
+		/obj/item/clothing/head/kitty,
+		/obj/item/weapon/glass_extra/straw,
+		/obj/item/weapon/ore/coal,
+		/obj/item/toy/plushie/nymph,
+		/obj/item/toy/plushie/farwa,
 		/obj/item/toy/katana,
 		/obj/item/toy/prize/deathripley,
 		/obj/item/toy/prize/durand,
@@ -87,21 +112,14 @@
 		/obj/item/toy/prize/seraph,
 		/obj/item/toy/spinningtoy,
 		/obj/item/toy/sword,
-		/obj/item/weapon/reagent_containers/food/snacks/grown/ambrosiadeus,
-		/obj/item/weapon/reagent_containers/food/snacks/grown/ambrosiavulgaris,
-		/obj/item/device/paicard,
-		/obj/item/device/violin,
-		/obj/item/weapon/storage/belt/utility/full,
-		/obj/item/clothing/accessory/horrible)
+		/obj/item/device/paicard)
 
 	if(!ispath(gift_type,/obj/item))	return
 
 	var/obj/item/I = new gift_type(M)
-	M.remove_from_mob(src)
 	M.put_in_hands(I)
 	I.add_fingerprint(M)
 	qdel(src)
-	return
 
 /*
  * Wrapping Paper and Gifts
@@ -168,7 +186,7 @@
 				if(istype(W, /obj/item/smallDelivery) || istype(W, /obj/item/weapon/gift)) //No gift wrapping gifts!
 					return
 
-				if(user.drop_from_inventory(W))
+				if(user.unEquip(W))
 					var/obj/item/weapon/gift/G = new /obj/item/weapon/gift( src.loc, W )
 					G.add_fingerprint(user)
 					W.add_fingerprint(user)

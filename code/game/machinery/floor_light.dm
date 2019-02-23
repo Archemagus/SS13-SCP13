@@ -12,12 +12,13 @@ var/list/floor_light_cache = list()
 	idle_power_usage = 2
 	active_power_usage = 20
 	power_channel = LIGHT
-	matter = list(DEFAULT_WALL_MATERIAL = 250, "glass" = 250)
+	matter = list(MATERIAL_STEEL = 250, MATERIAL_GLASS = 250)
 
 	var/on
 	var/damaged
-	var/default_light_range = 4
-	var/default_light_power = 2
+	var/default_light_max_bright = 0.75
+	var/default_light_inner_range = 1
+	var/default_light_outer_range = 3
 	var/default_light_colour = "#ffffff"
 
 /obj/machinery/floor_light/prebuilt
@@ -41,6 +42,11 @@ var/list/floor_light_cache = list()
 		stat &= ~BROKEN
 		damaged = null
 		update_brightness()
+	else if(isMultitool(W))
+		var/new_colour = input(usr, "Choose a colour.", "light color", default_light_colour) as color|null
+		if(new_colour && new_colour != default_light_colour)
+			default_light_colour = new_colour
+		to_chat(usr, "<span class='notice'>You set \the [src] to shine with <font color='[default_light_colour]'>a new colour</font>.</span>")
 	else if(W.force && user.a_intent == "hurt")
 		attack_hand(user)
 	return
@@ -93,17 +99,17 @@ var/list/floor_light_cache = list()
 
 /obj/machinery/floor_light/proc/update_brightness()
 	if(on && use_power == 2)
-		if(light_range != default_light_range || light_power != default_light_power || light_color != default_light_colour)
-			set_light(default_light_range, default_light_power, default_light_colour)
+		if(light_outer_range != default_light_outer_range || light_max_bright != default_light_max_bright || light_color != default_light_colour)
+			set_light(default_light_max_bright, default_light_inner_range, default_light_outer_range, l_color = default_light_colour)
 	else
 		use_power = 0
-		if(light_range || light_power)
+		if(light_outer_range || light_max_bright)
 			set_light(0)
 
-	active_power_usage = ((light_range + light_power) * 10)
+	active_power_usage = ((light_outer_range + light_max_bright) * 20)
 	update_icon()
 
-/obj/machinery/floor_light/update_icon()
+/obj/machinery/floor_light/on_update_icon()
 	overlays.Cut()
 	if(use_power && !broken())
 		if(isnull(damaged))

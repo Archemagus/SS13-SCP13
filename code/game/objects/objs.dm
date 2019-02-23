@@ -15,13 +15,9 @@
 	var/damtype = "brute"
 	var/armor_penetration = 0
 	var/anchor_fall = FALSE
-	
-/obj/New()
-	..()
-	global.obj_list += src
+	var/holographic = 0 //if the obj is a holographic object spawned by the holodeck
 
 /obj/Destroy()
-	global.obj_list -= src 
 	STOP_PROCESSING(SSobj, src)
 	return ..()
 
@@ -162,3 +158,17 @@
 	if(Adjacent(user))
 		add_fingerprint(user)
 	..()
+
+/obj/is_fluid_pushable(var/amt)
+	return ..() && w_class <= round(amt/20)// Called when turf is hit by a thrown object
+
+/obj/hitby(atom/movable/AM as mob|obj, var/speed)
+	if(src.density)
+		spawn(2)
+			step(AM, turn(AM.last_move, 180))
+		if(isliving(AM))
+			var/mob/living/M = AM
+			M.object_collision(src, speed)
+
+/obj/proc/can_embed()
+	return is_sharp(src)

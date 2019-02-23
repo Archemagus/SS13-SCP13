@@ -106,7 +106,7 @@
 	removeVerb(/obj/mecha/verb/disconnect_from_port)
 	log_message("[src.name] created.")
 	loc.Entered(src)
-	global.mecha_list += src //global mech list
+	mechas_list += src //global mech list
 	return
 
 /obj/mecha/Destroy()
@@ -155,7 +155,7 @@
 	QDEL_NULL(pr_internal_damage)
 	QDEL_NULL(spark_system)
 
-	global.mecha_list -= src //global mech list
+	mechas_list -= src //global mech list
 	. = ..()
 
 ////////////////////////
@@ -208,7 +208,7 @@
 
 	for(var/i = 0, i<numticks, i++)
 		sleep(delayfraction)
-		if(!src || !user || !user.canmove || !(user.loc == T))
+		if(!src || !user || user.is_physically_disabled() || !(user.loc == T))
 			return 0
 
 	return 1
@@ -349,7 +349,7 @@
 
 /obj/mecha/relaymove(mob/user,direction)
 	if(user != src.occupant) //While not "realistic", this piece is player friendly.
-		user.forceMove(get_turf(src))
+		user.dropInto(loc)
 		to_chat(user, "You climb out from [src]")
 		return 0
 	if(connected_port)
@@ -360,11 +360,16 @@
 	if(state)
 		occupant_message("<font color='red'>Maintenance protocols in effect.</font>")
 		return
-	. = do_move(direction)
-	occupant.dir = dir 
-	occupant.update_vision_cone()
+	if(!user.skill_check(SKILL_MECH, HAS_PERK))
+		if(prob(5))
+			if((. = do_move(turn(direction, pick(90, 270)), 2)))
+				user.visible_message("<span class='warning'>\The [src] swerves wildly!</span>", "<span class='warning'>You hit the wrong control: [src] swerves wildly!</span>")
+			return
+		if(prob(5))
+			return do_move(direction, rand(5,12))
+	return do_move(direction)
 
-/obj/mecha/proc/do_move(direction)
+/obj/mecha/proc/do_move(direction, number = 1)
 	if(!can_move)
 		return 0
 	if(src.pr_inertial_movement.active())
@@ -387,25 +392,33 @@
 				src.log_message("Movement control lost. Inertial movement started.")
 		if(do_after(step_in))
 			can_move = 1
+		if(--number)
+			return .()
 		return 1
 	return 0
 
 /obj/mecha/proc/mechturn(direction)
 	set_dir(direction)
-	playsound(src,'sound/mecha/mechturn.ogg',40,1)
+	playsound(src,'sound/mecha/Mech_Rotation.ogg',40,1)
+	for(var/mob/M in src)
+		M.set_dir(direction)
 	return 1
 
 /obj/mecha/proc/mechstep(direction)
 	var/result = step(src,direction)
 	if(result)
-		playsound(src,'sound/mecha/mechstep.ogg',40,1)
+		for(var/mob/M in src)
+			M.set_dir(dir)
+		playsound(src,'sound/mecha/Mech_Step.ogg',100,1)
 	return result
 
 
 /obj/mecha/proc/mechsteprand()
 	var/result = step_rand(src)
 	if(result)
-		playsound(src,'sound/mecha/mechstep.ogg',40,1)
+		for(var/mob/M in src)
+			M.set_dir(dir)
+		playsound(src,'sound/mecha/Mech_Step.ogg',100,1)
 	return result
 
 /obj/mecha/Bump(var/atom/obstacle)
@@ -580,7 +593,7 @@
 			user.visible_message("<span class='danger'>\The [user] hits \the [src]. Nothing happens.</span>","<span class='danger'>You hit \the [src] with no visible effect.</span>")
 			src.log_append_to_last("Armor saved.")
 		return
-	else if ((HULK in user.mutations) && !deflect_hit(is_melee=1))
+	else if ((MUTATION_HULK in user.mutations) && !deflect_hit(is_melee=1))
 		src.hit_damage(damage=15, is_melee=1)
 		src.check_for_internal_damage(list(MECHA_INT_TEMP_CONTROL,MECHA_INT_TANK_BREACH,MECHA_INT_CONTROL_LOST))
 		user.visible_message("<font color='red'><b>[user] hits [src.name], doing some damage.</b></font>", "<font color='red'><b>You hit [src.name] with all your might. The metal creaks and bends.</b></font>")
@@ -707,6 +720,8 @@
 		src.check_for_internal_damage(list(MECHA_INT_FIRE, MECHA_INT_TEMP_CONTROL))
 	return
 
+/obj/mecha/is_burnable()
+	return TRUE
 
 //////////////////////
 ////// AttackBy //////
@@ -718,7 +733,8 @@
 		var/obj/item/mecha_parts/mecha_equipment/E = W
 		spawn()
 			if(E.can_attach(src))
-				user.drop_item()
+				if(!user.unEquip(E))
+					return
 				E.attach(src)
 				user.visible_message("[user] attaches [W] to [src]", "You attach [W] to [src]")
 			else
@@ -779,7 +795,7 @@
 		if(state>=3 && src.occupant)
 			to_chat(user, "You attempt to eject the pilot using the maintenance controls.")
 			if(src.occupant.stat)
-				src.go_out()
+				src.go_out(user)
 				src.log_message("[src.occupant] was ejected using the maintenance controls.")
 			else
 				to_chat(user, "<span class='warning'>Your attempt is rejected.</span>")
@@ -790,9 +806,9 @@
 	else if(istype(W, /obj/item/weapon/cell))
 		if(state==4)
 			if(!src.cell)
+				if(!user.unEquip(W, src))
+					return
 				to_chat(user, "You install the powercell")
-				user.drop_item()
-				W.forceMove(src)
 				src.cell = W
 				src.log_message("Powercell installed")
 			else
@@ -816,9 +832,7 @@
 			to_chat(user, "The [src.name] is at full integrity")
 		return
 
-	else if(istype(W, /obj/item/mecha_parts/mecha_tracking))
-		user.drop_from_inventory(W)
-		W.forceMove(src)
+	else if(istype(W, /obj/item/mecha_parts/mecha_tracking) && user.unEquip(W, src))
 		user.visible_message("[user] attaches [W] to [src].", "You attach [W] to [src]")
 		return
 
@@ -977,8 +991,8 @@
 	set popup_menu = 0
 	if(usr!=occupant)	return
 	lights = !lights
-	if(lights)	set_light(light_range + lights_power)
-	else		set_light(light_range - lights_power)
+	if(lights)	set_light(0.6, 1, 6)
+	else		set_light(0)
 	src.occupant_message("Toggled lights [lights?"on":"off"].")
 	log_message("Toggled lights [lights?"on":"off"].")
 	return
@@ -1016,6 +1030,7 @@
 			to_chat(usr, "<span class='danger'>Kinda hard to climb in while handcuffed don't you think?</span>")
 			return
 	if (src.occupant)
+		sound_to(usr, sound('sound/mecha/UI_SCI-FI_Tone_Deep_Wet_15_stereo_error.ogg',channel = 4, volume = 100))
 		to_chat(usr, "<span class='danger'>The [src.name] is already occupied!</span>")
 		src.log_append_to_last("Permission denied.")
 		return
@@ -1031,6 +1046,7 @@
 	else if(src.operation_allowed(usr))
 		passed = 1
 	if(!passed)
+		sound_to(usr, sound('sound/mecha/UI_SCI-FI_Tone_Deep_Wet_15_stereo_error.ogg',channel = 4, volume = 100))
 		to_chat(usr, "<span class='warning'>Access denied</span>")
 		src.log_append_to_last("Permission denied.")
 		return
@@ -1060,8 +1076,6 @@
 		*/
 		H.stop_pulling()
 		H.forceMove(src)
-		H.update_vision_cone()
-
 		src.occupant = H
 		src.add_fingerprint(H)
 		src.forceMove(src.loc)
@@ -1086,28 +1100,19 @@
 	src.occupant << browse(src.get_stats_html(), "window=exosuit")
 	return
 
-/*
-/obj/mecha/verb/force_eject()
-	set category = "Object"
-	set name = "Force Eject"
-	set src in view(5)
-	src.go_out()
-	return
-*/
-
 /obj/mecha/verb/eject()
 	set name = "Eject"
 	set category = "Exosuit Interface"
 	set src = usr.loc
 	set popup_menu = 0
-	if(usr!=src.occupant)
+	if(usr != occupant)
 		return
-	src.go_out()
+	go_out(usr)
 	add_fingerprint(usr)
 	return
 
-
-/obj/mecha/proc/go_out()
+// user argument optional, for skill checking
+/obj/mecha/proc/go_out(mob/user)
 	if(!src.occupant) return
 	var/atom/movable/mob_container
 	if(ishuman(occupant))
@@ -1151,19 +1156,18 @@
 			src.occupant.client.perspective = MOB_PERSPECTIVE
 		*/
 		src.occupant << browse(null, "window=exosuit")
-		src.occupant.update_vision_cone()
-		
 		if(istype(mob_container, /obj/item/device/mmi))
 			var/obj/item/device/mmi/mmi = mob_container
 			if(mmi.brainmob)
-				occupant.loc = mmi
+				occupant.forceMove(mmi)
 			mmi.mecha = null
-			src.occupant.canmove = 0
 			src.verbs += /obj/mecha/verb/eject
+		if(occupant == user && !occupant.skill_check(SKILL_MECH, HAS_PERK) && prob(25))
+			mob_container.throw_at_random(FALSE, 3, 1)
+			user.visible_message("<span class ='notice'>\The [mob_container] is forcibly ejected by \the [src]!</span>", "<span class ='notice'>\The [src] forcibly ejects you! Are you sure that was the right button?</span>")
 		src.occupant = null
 		src.icon_state = src.reset_icon()+"-open"
 		src.set_dir(dir_in)
-	return
 
 /////////////////////////
 ////// Access stuff /////
@@ -1445,12 +1449,14 @@
 		send_byjax(src.occupant,"exosuit.browser","content",src.get_stats_part())
 		return
 	if(href_list["close"])
+		sound_to(usr, sound('sound/mecha/UI_SCI-FI_Tone_10_stereo.ogg',channel=4, volume=100))
 		return
 	if(usr.stat > 0)
 		return
 	var/datum/topic_input/F = new /datum/topic_input(href,href_list)
 	if(href_list["select_equip"])
 		if(usr != src.occupant)	return
+		sound_to(usr, sound('sound/mecha/UI_SCI-FI_Tone_10_stereo.ogg',channel=4, volume=100))
 		var/obj/item/mecha_parts/mecha_equipment/equip = F.getObj("select_equip")
 		if(equip)
 			src.selected = equip
@@ -1460,28 +1466,34 @@
 		return
 	if(href_list["eject"])
 		if(usr != src.occupant)	return
+		playsound(src, 'sound/mecha/ROBOTIC_Servo_Large_Dual_Servos_Open_mono.ogg',100,1)
 		src.eject()
 		return
 	if(href_list["toggle_lights"])
 		if(usr != src.occupant)	return
+		sound_to(usr, sound('sound/mecha/UI_SCI-FI_Tone_10_stereo.ogg',channel=4, volume=100))
 		src.toggle_lights()
 		return
 	if(href_list["toggle_airtank"])
 		if(usr != src.occupant)	return
+		sound_to(usr, sound('sound/mecha/UI_SCI-FI_Tone_10_stereo.ogg',channel=4, volume=100))
 		src.toggle_internal_tank()
 		return
 	if(href_list["rmictoggle"])
 		if(usr != src.occupant)	return
+		sound_to(usr, sound('sound/mecha/UI_SCI-FI_Tone_10_stereo.ogg',channel=4, volume=100))
 		radio.broadcasting = !radio.broadcasting
 		send_byjax(src.occupant,"exosuit.browser","rmicstate",(radio.broadcasting?"Engaged":"Disengaged"))
 		return
 	if(href_list["rspktoggle"])
 		if(usr != src.occupant)	return
+		sound_to(usr, sound('sound/mecha/UI_SCI-FI_Tone_10_stereo.ogg',channel=4, volume=100))
 		radio.listening = !radio.listening
 		send_byjax(src.occupant,"exosuit.browser","rspkstate",(radio.listening?"Engaged":"Disengaged"))
 		return
 	if(href_list["rfreq"])
 		if(usr != src.occupant)	return
+		sound_to(usr, sound('sound/mecha/UI_SCI-FI_Tone_10_stereo.ogg',channel=4, volume=100))
 		var/new_frequency = (radio.frequency + F.getNum("rfreq"))
 		if ((radio.frequency < PUBLIC_LOW_FREQ || radio.frequency > PUBLIC_HIGH_FREQ))
 			new_frequency = sanitize_frequency(new_frequency)
@@ -1490,10 +1502,12 @@
 		return
 	if(href_list["port_disconnect"])
 		if(usr != src.occupant)	return
+		sound_to(usr, sound('sound/mecha/UI_SCI-FI_Tone_10_stereo.ogg',channel=4, volume=100))
 		src.disconnect_from_port()
 		return
 	if (href_list["port_connect"])
 		if(usr != src.occupant)	return
+		sound_to(usr, sound('sound/mecha/UI_SCI-FI_Tone_10_stereo.ogg',channel=4, volume=100))
 		src.connect_to_port()
 		return
 	if (href_list["view_log"])
@@ -1505,18 +1519,21 @@
 		if(usr != src.occupant)	return
 		var/newname = sanitizeSafe(input(occupant,"Choose new exosuit name","Rename exosuit",initial(name)) as text, MAX_NAME_LEN)
 		if(newname)
+			sound_to(usr, sound('sound/mecha/UI_SCI-FI_Tone_Deep_Wet_22_stereo_complite.ogg',channel=4, volume=100))
 			SetName(newname)
 		else
 			alert(occupant, "nope.avi")
 		return
 	if (href_list["toggle_id_upload"])
 		if(usr != src.occupant)	return
+		sound_to(usr, sound('sound/mecha/UI_SCI-FI_Tone_10_stereo.ogg',channel=4, volume=100))
 		add_req_access = !add_req_access
 		send_byjax(src.occupant,"exosuit.browser","t_id_upload","[add_req_access?"L":"Unl"]ock ID upload panel")
 		return
 	if(href_list["toggle_maint_access"])
 		if(usr != src.occupant)	return
 		if(state)
+			sound_to(usr, sound('sound/mecha/UI_SCI-FI_Tone_10_stereo.ogg',channel=4, volume=100))
 			occupant_message("<font color='red'>Maintenance protocols in effect</font>")
 			return
 		maint_access = !maint_access
@@ -1524,6 +1541,7 @@
 		return
 	if(href_list["req_access"] && add_req_access)
 		if(!in_range(src, usr))	return
+		sound_to(usr, sound('sound/mecha/UI_SCI-FI_Tone_10_stereo.ogg',channel=4, volume=100))
 		output_access_dialog(F.getObj("id_card"),F.getMob("user"))
 		return
 	if(href_list["maint_access"] && maint_access)
@@ -1532,9 +1550,11 @@
 		if(user)
 			if(state==0)
 				state = 1
+				sound_to(user, sound('sound/mecha/UI_SCI-FI_Tone_Deep_Wet_22_stereo_complite.ogg',channel=4, volume=100))
 				to_chat(user, "The securing bolts are now exposed.")
 			else if(state==1)
 				state = 0
+				sound_to(user, sound('sound/mecha/UI_SCI-FI_Tone_Deep_Wet_22_stereo_complite.ogg',channel=4, volume=100))
 				to_chat(user, "The securing bolts are now hidden.")
 			output_maintenance_dialog(F.getObj("id_card"),user)
 		return
@@ -1542,6 +1562,7 @@
 		if(!in_range(src, usr))	return
 		var/mob/user = F.getMob("user")
 		if(user)
+			sound_to(user, sound('sound/mecha/UI_SCI-FI_Tone_10_stereo.ogg',channel=4, volume=100))
 			var/new_pressure = input(user,"Input new output pressure","Pressure setting",internal_tank_valve) as num
 			if(new_pressure)
 				internal_tank_valve = new_pressure
@@ -1575,16 +1596,19 @@
 		return
 	if(href_list["add_req_access"] && add_req_access && F.getObj("id_card"))
 		if(!in_range(src, usr))	return
+		sound_to(usr, sound('sound/mecha/UI_SCI-FI_Tone_10_stereo.ogg',channel=4, volume=100))
 		operation_req_access += F.getNum("add_req_access")
 		output_access_dialog(F.getObj("id_card"),F.getMob("user"))
 		return
 	if(href_list["del_req_access"] && add_req_access && F.getObj("id_card"))
 		if(!in_range(src, usr))	return
+		sound_to(usr, sound('sound/mecha/UI_SCI-FI_Tone_10_stereo.ogg',channel=4, volume=100))
 		operation_req_access -= F.getNum("del_req_access")
 		output_access_dialog(F.getObj("id_card"),F.getMob("user"))
 		return
 	if(href_list["finish_req_access"])
 		if(!in_range(src, usr))	return
+		sound_to(usr, sound('sound/mecha/UI_SCI-FI_Tone_10_stereo.ogg',channel=4, volume=100))
 		add_req_access = 0
 		var/mob/user = F.getMob("user")
 		user << browse(null,"window=exosuit_add_access")
@@ -1592,26 +1616,32 @@
 	if(href_list["dna_lock"])
 		if(usr != src.occupant)	return
 		if(istype(occupant, /mob/living/carbon/brain))
+			sound_to(usr, sound('sound/mecha/UI_SCI-FI_Tone_Deep_Wet_15_stereo_error.ogg',channel=4, volume=100))
 			occupant_message("You are a brain. No.")
 			return
 		if(src.occupant)
+			sound_to(usr, sound('sound/mecha/UI_SCI-FI_Compute_01_Wet_stereo.ogg',channel=4, volume=100))
 			src.dna = src.occupant.dna.unique_enzymes
 			src.occupant_message("You feel a prick as the needle takes your DNA sample.")
 		return
 	if(href_list["reset_dna"])
 		if(usr != src.occupant)	return
+		sound_to(usr, sound('sound/mecha/UI_SCI-FI_Tone_10_stereo.ogg',channel=4, volume=100))
 		src.dna = null
 	if(href_list["repair_int_control_lost"])
 		if(usr != src.occupant)	return
 		src.occupant_message("Recalibrating coordination system.")
 		src.log_message("Recalibration of coordination system started.")
+		sound_to(usr, sound('sound/mecha/UI_SCI-FI_Compute_01_Wet_stereo.ogg',channel=4, volume=100))
 		var/T = src.loc
 		if(do_after(100))
 			if(T == src.loc)
 				src.clearInternalDamage(MECHA_INT_CONTROL_LOST)
 				src.occupant_message("<font color='blue'>Recalibration successful.</font>")
+				sound_to(usr, sound('sound/mecha/UI_SCI-FI_Tone_Deep_Wet_22_stereo_complite.ogg',channel=4, volume=100))
 				src.log_message("Recalibration of coordination system finished with 0 errors.")
 			else
+				sound_to(usr, sound('sound/mecha/UI_SCI-FI_Tone_Deep_Wet_15_stereo_error.ogg',channel=4, volume=100))
 				src.occupant_message("<font color='red'>Recalibration failed.</font>")
 				src.log_message("Recalibration of coordination system failed with 1 error.",1)
 
@@ -1861,3 +1891,7 @@
 */
 /obj/mecha/fall_damage()
 	return 550
+
+/obj/mecha/lava_act(datum/gas_mixture/air, temperature, pressure)
+	fire_act(air, temperature)
+	. = (health <= 0) ? ..() : FALSE

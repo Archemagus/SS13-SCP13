@@ -19,7 +19,7 @@
 	appearance_flags = 0
 	opacity = 1
 	assembly_type = /obj/structure/door_assembly/multi_tile
-	
+
 /obj/machinery/door/airlock/multi_tile/New()
 	..()
 	SetBounds()
@@ -28,8 +28,17 @@
 	. = ..()
 	SetBounds()
 
-
 /obj/machinery/door/airlock/multi_tile/proc/SetBounds()
+	if(!(width > 1)) return //Bubblewrap
+
+	for(var/i = 1, i < width, i++)
+		if(dir in list(NORTH, SOUTH))
+			var/turf/T = locate(x + i, y, z)
+			T.set_opacity(opacity)
+		else if(dir in list(EAST, WEST))
+			var/turf/T = locate(x, y + i, z)
+			T.set_opacity(opacity)
+
 	if(dir in list(NORTH, SOUTH))
 		bound_width = width * world.icon_size
 		bound_height = world.icon_size
@@ -37,7 +46,8 @@
 		bound_width = world.icon_size
 		bound_height = width * world.icon_size
 
-/obj/machinery/door/airlock/multi_tile/update_icon(state=0, override=0)
+
+/obj/machinery/door/airlock/multi_tile/on_update_icon(state=0, override=0)
 	..()
 	if(connections in list(NORTH, SOUTH, NORTH|SOUTH))
 		if(connections in list(WEST, EAST, EAST|WEST))
@@ -46,24 +56,24 @@
 			set_dir(WEST)
 	else
 		set_dir(SOUTH)
- 
+
 /obj/machinery/door/airlock/multi_tile/update_connections(var/propagate = 0)
 	var/dirs = 0
- 
-	for(var/direction in GLOB.cardinal)		
+
+	for(var/direction in GLOB.cardinal)
 		var/turf/T = get_step(src, direction)
 		var/success = 0
- 
+
 		if(direction in list(NORTH, EAST))
 			T = get_step(T, direction)
- 
+
 		if( istype(T, /turf/simulated/wall))
 			success = 1
 			if(propagate)
 				var/turf/simulated/wall/W = T
-				W.update_connections(1)
+				W.update_connections()
 				W.update_icon()
- 
+
 		else if( istype(T, /turf/simulated/shuttle/wall))
 			success = 1
 		else
@@ -71,115 +81,152 @@
 				for(var/b_type in blend_objects)
 					if( istype(O, b_type))
 						success = 1
- 
+
 					if(success)
 						break
 				if(success)
 					break
- 
+
 		if(success)
 			dirs |= direction
 	connections = dirs
-	
+
+//We have to find these again since these doors are used on shuttles a lot so the turfs changes
+/obj/machinery/door/airlock/multi_tile/proc/update_filler_turfs()
+	for(var/i = 1, i < width, i++)
+		if(dir in list(NORTH, SOUTH))
+			var/turf/T = locate(x + i, y, z)
+			if(T) T.set_opacity(opacity)
+		else if(dir in list(EAST, WEST))
+			var/turf/T = locate(x, y + i, z)
+			if(T) T.set_opacity(opacity)
+
+
+/obj/machinery/door/airlock/multi_tile/proc/get_filler_turfs()
+	var/list/filler_turfs = list()
+	for(var/i = 1, i < width, i++)
+		if(dir in list(NORTH, SOUTH))
+			var/turf/T = locate(x + i, y, z)
+			if(T) filler_turfs += T
+		else if(dir in list(EAST, WEST))
+			var/turf/T = locate(x, y + i, z)
+			if(T) filler_turfs += T
+	return filler_turfs
+
+/obj/machinery/door/airlock/multi_tile/open()
+	. = ..()
+	update_filler_turfs()
+
+/obj/machinery/door/airlock/multi_tile/close()
+	. = ..()
+	update_filler_turfs()
+
 /obj/machinery/door/airlock/multi_tile/command
 	door_color = COLOR_COMMAND_BLUE
- 
+
 /obj/machinery/door/airlock/multi_tile/security
 	door_color = COLOR_NT_RED
- 
+
 /obj/machinery/door/airlock/multi_tile/engineering
 	name = "Maintenance Hatch"
 	door_color = COLOR_AMBER
- 
+
 /obj/machinery/door/airlock/multi_tile/medical
 	door_color = COLOR_WHITE
 	stripe_color = COLOR_DEEP_SKY_BLUE
- 
+
 /obj/machinery/door/airlock/multi_tile/virology
 	door_color = COLOR_WHITE
 	stripe_color = COLOR_GREEN
- 
+
 /obj/machinery/door/airlock/multi_tile/mining
 	name = "Mining Airlock"
 	door_color = COLOR_PALE_ORANGE
 	stripe_color = COLOR_BEASTY_BROWN
- 
+
 /obj/machinery/door/airlock/multi_tile/atmos
 	door_color = COLOR_AMBER
 	stripe_color = COLOR_CYAN
- 
+
 /obj/machinery/door/airlock/multi_tile/research
 	door_color = COLOR_WHITE
-	stripe_color = COLOR_NT_RED
- 
+	stripe_color = COLOR_BOTTLE_GREEN
+
 /obj/machinery/door/airlock/multi_tile/science
 	door_color = COLOR_WHITE
 	stripe_color = COLOR_VIOLET
- 
+
 /obj/machinery/door/airlock/multi_tile/sol
 	door_color = COLOR_BLUE_GRAY
- 
+
 /obj/machinery/door/airlock/multi_tile/maintenance
 	name = "Maintenance Access"
 	stripe_color = COLOR_AMBER
- 
+
 /obj/machinery/door/airlock/multi_tile/civilian
 	stripe_color = COLOR_CIVIE_GREEN
- 
+
 /obj/machinery/door/airlock/multi_tile/freezer
 	name = "Freezer Airlock"
 	door_color = COLOR_WHITE
-	
+
 /obj/machinery/door/airlock/multi_tile/glass
 	name = "Glass Airlock"
+	opacity = 0
 	glass = 1
 
 /obj/machinery/door/airlock/multi_tile/glass/command
 	door_color = COLOR_COMMAND_BLUE
 	stripe_color = COLOR_SKY_BLUE
- 
+
 /obj/machinery/door/airlock/multi_tile/glass/security
 	door_color = COLOR_NT_RED
 	stripe_color = COLOR_ORANGE
- 
+
+/obj/machinery/door/airlock/multi_tile/glass/security/no_stripe
+	stripe_color = null
+
 /obj/machinery/door/airlock/multi_tile/glass/engineering
 	door_color = COLOR_AMBER
 	stripe_color = COLOR_RED
- 
+
+/obj/machinery/door/airlock/multi_tile/glass/engineering/no_stripe
+	stripe_color = null
+
 /obj/machinery/door/airlock/multi_tile/glass/medical
 	door_color = COLOR_WHITE
 	stripe_color = COLOR_DEEP_SKY_BLUE
- 
+
 /obj/machinery/door/airlock/multi_tile/glass/virology
 	door_color = COLOR_WHITE
 	stripe_color = COLOR_GREEN
- 
+
 /obj/machinery/door/airlock/multi_tile/glass/mining
 	door_color = COLOR_PALE_ORANGE
 	stripe_color = COLOR_BEASTY_BROWN
- 
+
 /obj/machinery/door/airlock/multi_tile/glass/atmos
 	door_color = COLOR_AMBER
 	stripe_color = COLOR_CYAN
- 
+
 /obj/machinery/door/airlock/multi_tile/glass/research
 	door_color = COLOR_WHITE
-	stripe_color = COLOR_NT_RED
- 
+	stripe_color = COLOR_BOTTLE_GREEN
+
 /obj/machinery/door/airlock/multi_tile/glass/science
 	door_color = COLOR_WHITE
 	stripe_color = COLOR_VIOLET
- 
+
 /obj/machinery/door/airlock/multi_tile/glass/sol
 	door_color = COLOR_BLUE_GRAY
 	stripe_color = COLOR_AMBER
- 
+
 /obj/machinery/door/airlock/multi_tile/glass/freezer
 	door_color = COLOR_WHITE
- 
+
 /obj/machinery/door/airlock/multi_tile/glass/maintenance
 	name = "Maintenance Access"
 	stripe_color = COLOR_AMBER
- 
+
 /obj/machinery/door/airlock/multi_tile/glass/civilian
-	stripe_color = COLOR_CIVIE_GREEN 
+	stripe_color = COLOR_CIVIE_GREEN

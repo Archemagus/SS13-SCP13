@@ -225,7 +225,7 @@
 		..()
 
 		if(autolink)
-			for(var/obj/machinery/magnetic_module/M in SSmachines.all_machinery)
+			for(var/obj/machinery/magnetic_module/M in world)
 				if(M.freq == frequency && M.code == code)
 					magnets.Add(M)
 
@@ -241,7 +241,7 @@
 
 	Process()
 		if(magnets.len == 0 && autolink)
-			for(var/obj/machinery/magnetic_module/M in SSmachines.all_machinery)
+			for(var/obj/machinery/magnetic_module/M in world)
 				if(M.freq == frequency && M.code == code)
 					magnets.Add(M)
 
@@ -311,7 +311,7 @@
 
 			// Broadcast the signal
 
-			radio_connection.post_signal(src, signal, filter = RADIO_MAGNETS)
+			radio_connection.post_signal(src, signal, radio_filter = RADIO_MAGNETS)
 
 			spawn(1)
 				updateUsrDialog() // pretty sure this increases responsiveness
@@ -378,7 +378,7 @@
 
 			// Broadcast the signal
 			spawn()
-				radio_connection.post_signal(src, signal, filter = RADIO_MAGNETS)
+				radio_connection.post_signal(src, signal, radio_filter = RADIO_MAGNETS)
 
 			if(speed == 10)
 				sleep(1)

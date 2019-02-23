@@ -8,7 +8,7 @@
 	else
 		construction_stage = null
 	if(!material)
-		material = get_material_by_name(DEFAULT_WALL_MATERIAL)
+		material = SSmaterials.get_material_by_name(DEFAULT_WALL_MATERIAL)
 	if(material)
 		explosion_resistance = material.explosion_resistance
 	if(reinf_material && reinf_material.explosion_resistance > explosion_resistance)
@@ -23,7 +23,7 @@
 
 	set_opacity(material.opacity >= 0.5)
 
-	radiation_repository.resistance_cache.Remove(src)
+	SSradiation.resistance_cache.Remove(src)
 	update_connections(1)
 	update_icon()
 
@@ -33,16 +33,27 @@
 	reinf_material = newrmaterial
 	update_material()
 
-/turf/simulated/wall/update_icon()
+/turf/simulated/wall/on_update_icon()
+
+	..()
+
 	if(!material)
 		return
 
-	if(!damage_overlays[1]) //list hasn't been populated
+	if(!damage_overlays[1]) //list hasn't been populated; note that it is always of fixed length, so we must check for membership.
 		generate_overlays()
 
-	overlays.Cut()
-	var/image/I
+	// This line apparently causes runtimes during initialization.
+	// As we don't know why, or how to resolve this, I'm blocking runtime recording until after init.
+	try
+		overlays.Cut()
+	catch(var/exception/e)
+		if(e && GAME_STATE < RUNLEVEL_GAME)
+			queue_icon_update()
+			return
+		throw e
 
+	var/image/I
 	var/base_color = paint_color ? paint_color : material.icon_colour
 	if(!density)
 		I = image('icons/turf/wall_masks.dmi', "[material.icon_base]fwall_open")
@@ -51,12 +62,13 @@
 		return
 
 	for(var/i = 1 to 4)
-		if(other_connections[i] != "0")
-			I = image('icons/turf/wall_masks.dmi', "[material.icon_base]_other[wall_connections[i]]", dir = 1<<(i-1))
-		else
-			I = image('icons/turf/wall_masks.dmi', "[material.icon_base][wall_connections[i]]", dir = 1<<(i-1))
+		I = image('icons/turf/wall_masks.dmi', "[material.icon_base][wall_connections[i]]", dir = 1<<(i-1))
 		I.color = base_color
 		overlays += I
+		if(other_connections[i] != "0")
+			I = image('icons/turf/wall_masks.dmi', "[material.icon_base]_other[wall_connections[i]]", dir = 1<<(i-1))
+			I.color = base_color
+			overlays += I
 
 	if(reinf_material)
 		var/reinf_color = paint_color ? paint_color : reinf_material.icon_colour
@@ -84,7 +96,6 @@
 				I = image('icons/turf/wall_masks.dmi', "stripe[wall_connections[i]]", dir = 1<<(i-1))
 			I.color = stripe_color
 			overlays += I
-
 
 	if(damage != 0)
 		var/integrity = material.integrity
@@ -131,7 +142,7 @@
 		var/success = 0
 		for(var/obj/O in T)
 			for(var/b_type in blend_objects)
-				if( istype(O, b_type))
+				if(istype(O, b_type))
 					success = 1
 				for(var/nb_type in noblend_objects)
 					if(istype(O, nb_type))
@@ -142,15 +153,18 @@
 				break
 
 		if(success)
-			wall_dirs += get_dir( src, T )
-			other_dirs += get_dir( src, T )
+			wall_dirs += get_dir(src, T)
+			if(get_dir(src, T) in GLOB.cardinal)
+				other_dirs += get_dir(src, T)
 
 	wall_connections = dirs_to_corner_states(wall_dirs)
 	other_connections = dirs_to_corner_states(other_dirs)
 
 /turf/simulated/wall/proc/can_join_with(var/turf/simulated/wall/W)
 	if(material && W.material && material.icon_base == W.material.icon_base)
-		return 1
+		if((reinf_material && W.reinf_material) || (!reinf_material && !W.reinf_material))
+			return 1
+		return 2
 	for(var/wb_type in blend_turfs)
 		if(istype(W, wb_type))
 			return 2

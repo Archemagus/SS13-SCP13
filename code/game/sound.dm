@@ -48,10 +48,16 @@ GLOBAL_LIST_INIT(page_sound,list('sound/effects/pageturn1.ogg', 'sound/effects/p
 GLOBAL_LIST_INIT(fracture_sound,list('sound/effects/bonebreak1.ogg','sound/effects/bonebreak2.ogg','sound/effects/bonebreak3.ogg','sound/effects/bonebreak4.ogg'))
 GLOBAL_LIST_INIT(lighter_sound,list('sound/items/lighter1.ogg','sound/items/lighter2.ogg','sound/items/lighter3.ogg'))
 GLOBAL_LIST_INIT(keyboard_sound,list('sound/machines/keyboard/keypress1.ogg','sound/machines/keyboard/keypress2.ogg','sound/machines/keyboard/keypress3.ogg','sound/machines/keyboard/keypress4.ogg'))
-GLOBAL_LIST_INIT(keystroke_sound,list('sound/machines/keyboard/keystroke1.ogg','sound/machines/keyboard/keystroke2.ogg','sound/machines/keyboard/keystroke3.ogg','sound/machines/keyboard/keystroke4.ogg'))
+GLOBAL_LIST_INIT(keystroke_sound,list('sound/machines/keyboard1.ogg','sound/machines/keyboard2.ogg','sound/machines/keyboard3.ogg','sound/machines/keyboard4.ogg'))
 GLOBAL_LIST_INIT(switch_sound,list('sound/machines/switch1.ogg','sound/machines/switch2.ogg','sound/machines/switch3.ogg','sound/machines/switch4.ogg'))
 GLOBAL_LIST_INIT(button_sound,list('sound/machines/button1.ogg','sound/machines/button2.ogg','sound/machines/button3.ogg','sound/machines/button4.ogg'))
 GLOBAL_LIST_INIT(chop_sound,list('sound/weapons/chop1.ogg','sound/weapons/chop2.ogg','sound/weapons/chop3.ogg'))
+GLOBAL_LIST_INIT(smash_sound,list('sound/effects/gore/smash1.ogg', 'sound/effects/gore/smash2.ogg', 'sound/effects/gore/smash3.ogg', 'sound/effects/gore/trauma1.ogg'))
+
+
+GLOBAL_LIST_INIT(unarmed_attack_sound,list('sound/effects/hit_kick.ogg', 'sound/effects/hit_punch.ogg'))
+
+GLOBAL_LIST_INIT(gun_sound, list('sound/weapons/gunshot.ogg', 'sound/weapons/gunshot2.ogg', 'sound/weapons/gunshot3.ogg', 'sound/weapons/gunshot4.ogg'))
 
 /proc/playsound(var/atom/source, soundin, vol as num, vary, extrarange as num, falloff, var/is_global, var/frequency, var/is_ambiance = 0)
 
@@ -159,7 +165,7 @@ var/const/FALLOFF_SOUNDS = 0.5
 
 /client/proc/playtitlemusic()
 	if(get_preference_value(/datum/client_preference/play_lobby_music) == GLOB.PREF_YES)
-		GLOB.using_map.lobby_music.play_to(src)
+		GLOB.using_map.lobby_track.play_to(src)
 
 /proc/get_rand_frequency()
 	return rand(32000, 55000) //Frequency stuff only works with 45kbps oggs.
@@ -182,5 +188,7 @@ var/const/FALLOFF_SOUNDS = 0.5
 			if ("keystroke") soundin = pick(GLOB.keystroke_sound)
 			if ("switch") soundin = pick(GLOB.switch_sound)
 			if ("button") soundin = pick(GLOB.button_sound)
+			if ("gunshot") soundin = pick(GLOB.gun_sound)
 			if ("chop") soundin = pick(GLOB.chop_sound)
+			if ("unarmed") soundin = pick(GLOB.unarmed_attack_sound)
 	return soundin

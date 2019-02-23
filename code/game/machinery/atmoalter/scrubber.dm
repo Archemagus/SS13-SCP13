@@ -43,8 +43,8 @@
 
 	..(severity)
 
-/obj/machinery/portable_atmospherics/powered/scrubber/update_icon()
-	src.overlays = 0
+/obj/machinery/portable_atmospherics/powered/scrubber/on_update_icon()
+	overlays.Cut()
 
 	if(on && cell && cell.charge)
 		icon_state = "pscrubber:1"
@@ -64,7 +64,7 @@
 
 	var/power_draw = -1
 
-	if(on && cell && cell.charge)
+	if(on && ( powered() || (cell && cell.charge) ) )
 		var/datum/gas_mixture/environment
 		if(holding)
 			environment = holding.air_contents
@@ -80,15 +80,20 @@
 		last_power_draw = 0
 	else
 		power_draw = max(power_draw, power_losses)
-		cell.use(power_draw * CELLRATE)
+		if(!powered())
+			cell.use(power_draw * CELLRATE)
+		else
+			use_power(power_draw)
 		last_power_draw = power_draw
 
 		update_connected_network()
 
 		//ran out of charge
-		if (!cell.charge)
+		if (!cell.charge && !powered())
 			power_change()
 			update_icon()
+		if(holding)
+			holding.queue_icon_update()
 
 	//src.update_icon()
 	src.updateDialog()
@@ -120,7 +125,7 @@
 	if (holding)
 		data["holdingTank"] = list("name" = holding.name, "tankPressure" = round(holding.air_contents.return_pressure() > 0 ? holding.air_contents.return_pressure() : 0))
 
-	ui = GLOB.nanomanager.try_update_ui(user, src, ui_key, ui, data, force_open)
+	ui = SSnano.try_update_ui(user, src, ui_key, ui, data, force_open)
 	if (!ui)
 		ui = new(user, src, ui_key, "portscrubber.tmpl", "Portable Scrubber", 480, 400, state = GLOB.physical_state)
 		ui.set_initial_data(data)
@@ -173,8 +178,8 @@
 /obj/machinery/portable_atmospherics/powered/scrubber/huge/attack_hand(var/mob/user as mob)
 		to_chat(usr, "<span class='notice'>You can't directly interact with this machine. Use the scrubber control console.</span>")
 
-/obj/machinery/portable_atmospherics/powered/scrubber/huge/update_icon()
-	src.overlays = 0
+/obj/machinery/portable_atmospherics/powered/scrubber/huge/on_update_icon()
+	overlays.Cut()
 
 	if(on && !(stat & (NOPOWER|BROKEN)))
 		icon_state = "scrubber:1"

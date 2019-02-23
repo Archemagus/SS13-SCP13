@@ -180,7 +180,19 @@
 
 /obj/structure/sign/warning/pods
 	name = "\improper ESCAPE PODS"
-	icon_state = "pods"
+	icon_state = "podsnorth"
+
+/obj/structure/sign/warning/pods/south
+	name = "\improper ESCAPE PODS"
+	icon_state = "podssouth"
+
+/obj/structure/sign/warning/pods/east
+	name = "\improper ESCAPE PODS"
+	icon_state = "podseast"
+
+/obj/structure/sign/warning/pods/west
+	name = "\improper ESCAPE PODS"
+	icon_state = "podswest"
 
 /obj/structure/sign/warning/radioactive
 	name = "\improper RADIOACTIVE AREA"
@@ -245,12 +257,6 @@
 	desc = "An extremely long list of names and job titles and a picture of the design team responsible for building this AI Core."
 	icon_state = "kiddieplaque"
 
-/obj/structure/sign/dplaque
-	name = "\improper D-Class Work Assignment Sheet"
-	desc = "Kitchen Duty - 3x, Botany Duty - 4x, Mining & Manual Labor - 6x, Janitorial - 2x."
-	icon_state = "kiddieplaque"
-
-
 /obj/structure/sign/atmosplaque
 	name = "\improper engineering memorial plaque"
 	desc = "This plaque memorializes those engineers and technicians who made the ultimate sacrifice to save their vessel and its crew."
@@ -273,7 +279,7 @@
 
 /obj/structure/sign/warning/science
 	name = "\improper SCIENCE!"
-	icon_state = "science1"
+	icon_state = "science"
 
 /obj/structure/sign/warning/science/anomalous_materials
 	name = "\improper ANOMALOUS MATERIALS"
@@ -284,7 +290,7 @@
 /obj/structure/sign/science_1
 	name = "\improper RESEARCH WING"
 	desc = "A sign labelling the research wing."
-	icon_state = "science1"
+	icon_state = "science"
 
 /obj/structure/sign/science_2
 	name = "\improper RESEARCH"
@@ -319,7 +325,7 @@
 /obj/structure/sign/chemistry
 	name = "\improper CHEMISTRY"
 	desc = "A sign labelling an area containing chemical equipment."
-	icon_state = "chemistry1"
+	icon_state = "chemistry"
 
 /obj/structure/sign/xenoflora
 	name = "\improper XENOFLORA"
@@ -334,7 +340,7 @@
 /obj/structure/sign/hydro
 	name = "\improper HYDROPONICS"
 	desc = "A sign labelling an area as a place where plants are grown."
-	icon_state = "hydro1"
+	icon_state = "hydro"
 
 /obj/structure/sign/hydrostorage
 	name = "\improper HYDROPONICS STORAGE"
@@ -386,30 +392,6 @@
 	name = "\improper Exam Room"
 	icon_state = "examroom"
 
-/obj/structure/sign/directions/site53/mcr
-	name = "\improper Main Control Room"
-	icon_state = "mcr"
-
-/obj/structure/sign/directions/site53/ez
-	name = "\improper Entrance Zone"
-	icon_state = "ez"
-
-/obj/structure/sign/directions/site53/bunker
-	name = "\improper Secure Bunker"
-	icon_state = "bunker"
-
-/obj/structure/sign/directions/site53/hcz
-	name = "\improper Heavy Containment Zone"
-	icon_state = "hcz"
-
-/obj/structure/sign/directions/site53/lcz
-	name = "\improper Light Containment Zone"
-	icon_state = "lcz"
-
-/obj/structure/sign/directions/site53/adm
-	name = "\improper Administration"
-	icon_state = "direction_adm"
-
 /obj/structure/sign/deck/bridge
 	name = "\improper Bridge Deck"
 	icon_state = "deck-b"
@@ -451,97 +433,20 @@
 	else
 		to_chat(user,"The name is left blank for some reason.")
 
-// TOPSIDE SIGNS
+/obj/structure/sign/nanotrasen
+	name = "\improper Nanotrasen logo"
+	desc = "Логотип корпорации будущего. Нано - отражение технологий, Трэйзен - Фамили&#255; генерального директора корпорации."
+	icon = 'icons/obj/infinity_decals.dmi'
+	icon_state = "NT"
 
-/obj/structure/sign/scp/topside/SecureArealv1mtf
-	icon_state = "secure"
-	desc = "A warning sign which reads: CAUTION, SECURE AREA. LEVEL 1+ SECURITY CLEARANCE REQUIRED."
+/obj/structure/sign/spider_clan
+	name = "\improper Spider Clan"
+	desc = "Клан паука - органиазаци&#255;, в которой обучаютс&#255; лучшие наемные убийцы изведанного космоса. Веро&#255тно, мне повезло, если &#255; знаю это."
+	icon = 'icons/obj/infinity_decals.dmi'
+	icon_state = "spider_clan"
 
-/obj/structure/sign/scp/topside/SecureArealv2mtf
-	icon_state = "secure"
-	desc = "A warning sign which reads: CAUTION, SECURE AREA. LEVEL 2+ SECURITY CLEARANCE REQUIRED."
-
-/obj/structure/sign/scp/topside/SecureArealv3mtf
-	icon_state = "secure"
-	desc = "A warning sign which reads: CAUTION, SECURE AREA. LEVEL 3+ SECURITY CLEARANCE REQUIRED."
-
-/obj/structure/sign/scp/topside/SecureArealv4mtf
-	icon_state = "secure"
-	desc = "A warning sign which reads: CAUTION, SECURE AREA. LEVEL 4+ SECURITY CLEARANCE REQUIRED."
-
-/obj/structure/sign/scp/topside/SecureArealv5mtf
-	icon_state = "secure"
-	desc = "A warning sign which reads: CAUTION, SECURE AREA. LEVEL 5+ SECURITY CLEARANCE REQUIRED."
-
-/obj/structure/sign/scp/radiation
-	icon_state = "radiationnew"
-	desc = "A warning sign which reads: CAUTION, RADIATION HAZARD."
-
-/obj/structure/sign/scp/electrical
-	icon_state = "electrical"
-	desc = "A warning sign which reads: CAUTION, ELECTRICAL HAZARD."
-
-/obj/structure/sign/scp/cryogenic
-	icon_state = "cryogenic"
-	desc = "A warning sign which reads: CAUTION, POTENTIAL CRYOGENIC HAZARD."
-
-/obj/structure/sign/scp/oxidizer
-	icon_state = "oxidizer"
-	desc = "A warning sign which reads: CAUTION, FLAMMABLE SUBSTANCE HAZARD."
-
-/obj/structure/sign/scp/memnetic
-	icon_state = "memnetic"
-	desc = "A warning sign which reads: CAUTION, MEMETIC HAZARD."
-
-/obj/structure/sign/scp/biohazardous
-	icon_state = "biohazardous"
-	desc = "A warning sign which reads: CAUTION, BIOHAZARD."
-
-/obj/structure/sign/scp/amnesiac
-	icon_state = "amnesiac"
-	desc = "A warning sign which reads: CAUTION, AMNESTIC HAZARD."
-
-/obj/structure/sign/scp/containers
-	icon_state = "containers"
-	desc = "A warning sign which reads: CAUTION, PRESSURIZED GAS STORAGE."
-
-/obj/structure/sign/scp/corrosive
-	icon_state = "corrosive"
-	desc = "A warning sign which reads: CAUTION, CORROSIVE HAZARD."
-
-/obj/structure/sign/scp/explosive
-	icon_state = "explosive"
-	desc = "A warning sign which reads: CAUTION, EXPLOSIVE HAZARD."
-
-/obj/structure/sign/scp/flamable
-	icon_state = "flamable"
-	desc = "A warning sign which reads: CAUTION, FLAMABLE HAZARD."
-
-/obj/structure/sign/scp/lasers
-	icon_state = "lasers"
-	desc = "A warning sign which reads: CAUTION, LASER HAZARD."
-
-/obj/structure/sign/scp/poisonous
-	icon_state = "poisonous"
-	desc = "A warning sign which reads: CAUTION, POISONOUS HAZARD."
-
-/obj/structure/sign/scp/magnetic
-	icon_state = "magnetic"
-	desc = "A warning sign which reads: CAUTION, MAGNETICAL HAZARD. NO METAL OBJECTS BEYOND THIS SIGN."
-
-/obj/structure/sign/scp/optics
-	icon_state = "optics"
-	desc = "A warning sign which reads: CAUTION, OPTICS HAZARD."
-
-/obj/structure/sign/scp/look
-	icon_state = "look"
-	desc = "A warning sign which reads: CAUTION, LOOK AT ANOMALOUS OBJECT."
-
-/obj/structure/sign/scp/dontlook
-	icon_state = "dontlook"
-	desc = "A warning sign which reads: CAUTION, DO NOT LOOK AT ANOMALOUS OBJECT."
-
-/obj/structure/sign/scp/dclass
-	name = "\improper MIND THE ACCEPTABLE ZONES!"
-	icon_state = "securearea2"
-	desc = "A warning sign which reads: REMEMBER YOUR PLACE. DO NOT MOVE BEYOND THE YELLOW HAZARD MARKINGS IF RED HATCHED MARKINGS ARE PRESENT! IMMEDIATE TERMINATION TO VIOLATIONS!"
+/obj/structure/sign/fifthfleet
+	name = "\improper Fifth Fleet"
+	desc = "Недавно созданный, оборудованный и модифицированный Пятый Флот был введен в 2550 г Ассамблеями для того, чтобы действовать как Силы Быстрого Реагирования. Хотя он еще невелик, в Пятый Флот входят одни из самых ярких умов Сил Обороны и оснащен новейшими технологиями."
+	icon = 'icons/obj/infinity_decals.dmi'
+	icon_state = "fifthfleet"

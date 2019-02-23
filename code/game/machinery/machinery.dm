@@ -115,13 +115,14 @@ Class Procs:
 	var/interact_offline = 0 // Can the machine be interacted with while de-powered.
 	var/clicksound			// sound played on succesful interface use by a carbon lifeform
 	var/clickvol = 40		// sound played on succesful interface use
+	var/core_skill = SKILL_DEVICES //The skill used for skill checks for this machine (mostly so subtypes can use different skills).
+	var/operator_skill      // Machines often do all operations on Process(). This caches the user's skill while the operations are running.
 
 /obj/machinery/Initialize(mapload, d=0)
 	. = ..()
 	if(d)
 		set_dir(d)
 	START_PROCESSING(SSmachines, src)
-	SSmachines.all_machinery += src
 
 /obj/machinery/Destroy()
 	STOP_PROCESSING(SSmachines, src)
@@ -131,7 +132,6 @@ Class Procs:
 				qdel(A)
 			else // Otherwise we assume they were dropped to the ground during deconstruction, and were not removed from the component_parts list by deconstruction code.
 				component_parts -= A
-	SSmachines.all_machinery -= src 
 	. = ..()
 
 /obj/machinery/Process()//If you dont use process or power why are you here
@@ -176,7 +176,7 @@ Class Procs:
 /obj/machinery/proc/auto_use_power()
 	if(!powered(power_channel))
 		return 0
-	else if(src.use_power == 1)
+	if(src.use_power == 1)
 		use_power(idle_power_usage,power_channel, 1)
 	else if(src.use_power >= 2)
 		use_power(active_power_usage,power_channel, 1)
@@ -297,13 +297,18 @@ Class Procs:
 	return 1
 
 /obj/machinery/proc/default_part_replacement(var/mob/user, var/obj/item/weapon/storage/part_replacer/R)
+	var/shouldplaysound = 0
 	if(!istype(R))
 		return 0
 	if(!component_parts)
 		return 0
-	if(panel_open)
+	if(panel_open || R.works_from_distance)
 		var/obj/item/weapon/circuitboard/CB = locate(/obj/item/weapon/circuitboard) in component_parts
 		var/P
+		if(R.works_from_distance)
+			to_chat(user, "<span class='notice'>Following parts detected in the machine:</span>")
+			for(var/var/obj/item/C in component_parts)
+				to_chat(user, "<span class='notice'>	[C.name]</span>")
 		for(var/obj/item/weapon/stock_parts/A in component_parts)
 			for(var/T in CB.req_components)
 				if(ispath(A.type, T))
@@ -316,8 +321,9 @@ Class Procs:
 						R.handle_item_insertion(A, 1)
 						component_parts -= A
 						component_parts += B
-						B.loc = null
+						B.forceMove(null)
 						to_chat(user, "<span class='notice'>[A.name] replaced with [B.name].</span>")
+						shouldplaysound = 1 //Only play the sound when parts are actually replaced!
 						break
 			update_icon()
 			RefreshParts()
@@ -325,6 +331,9 @@ Class Procs:
 		to_chat(user, "<span class='notice'>Following parts detected in the machine:</span>")
 		for(var/var/obj/item/C in component_parts)
 			to_chat(user, "<span class='notice'>	[C.name]</span>")
+	if(shouldplaysound)
+		R.play_rped_sound()
+		display_parts(user)
 	return 1
 
 /obj/machinery/proc/dismantle()
@@ -334,7 +343,7 @@ Class Procs:
 	M.state = 2
 	M.icon_state = "box_1"
 	for(var/obj/I in component_parts)
-		I.forceMove(get_turf(src))
+		I.dropInto(loc)
 
 	qdel(src)
 	return 1
@@ -355,3 +364,24 @@ Class Procs:
 	..()
 	if(clicksound && istype(user, /mob/living/carbon))
 		playsound(src, clicksound, clickvol)
+
+/obj/machinery/proc/display_parts(mob/user)
+	to_chat(user, "<span class='notice'>Following parts detected in the machine:</span>")
+	for(var/var/obj/item/C in component_parts)
+		to_chat(user, "<span class='notice'>	[C.name]</span>")
+
+/obj/machinery/examine(mob/user)
+	. = ..(user)
+	if(component_parts && hasHUD(user, HUD_SCIENCE))
+		display_parts(user)
+
+// This is really pretty crap and should be overridden for specific machines.
+/obj/machinery/water_act(var/depth)
+	..()
+	if(!(stat & (NOPOWER|BROKEN)) && !waterproof && (depth > FLUID_DEEP))
+		ex_act(3)
+
+/obj/machinery/Move()
+	. = ..()
+	if(. && !CanFluidPass())
+		fluid_update()

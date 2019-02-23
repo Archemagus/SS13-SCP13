@@ -10,7 +10,7 @@
 
 /datum/universal_state/bluespace_jump/OnEnter()
 	var/space_zlevel = GLOB.using_map.get_empty_zlevel() //get a place for stragglers
-	for(var/mob/living/M in GLOB.mob_list)
+	for(var/mob/living/M in SSmobs.mob_list)
 		if(M.z in affected_levels)
 			var/area/A = get_area(M)
 			if(istype(A,/area/space)) //straggler
@@ -28,8 +28,9 @@
 		GLOB.using_map.accessible_z_levels -= "[z]" //not accessible during the jump
 
 /datum/universal_state/bluespace_jump/OnExit()
-	for(var/M in bluespaced)
-		clear_bluespaced(M)
+	for(var/mob/M in bluespaced)
+		if(!QDELETED(M))
+			clear_bluespaced(M)
 
 	bluespaced.Cut()
 	GLOB.using_map.accessible_z_levels = old_accessible_z_levels

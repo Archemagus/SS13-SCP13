@@ -1,10 +1,15 @@
-/obj/Topic(var/href, var/href_list = list(), var/datum/topic_state/state = GLOB.default_state)
+/obj/proc/DefaultTopicState()
+	return GLOB.default_state
+
+/obj/Topic(var/href, var/href_list = list(), var/datum/topic_state/state)
 	if((. = ..()))
 		return
+	state = state || DefaultTopicState() || GLOB.default_state
 	if(CanUseTopic(usr, state, href_list) == STATUS_INTERACTIVE)
 		CouldUseTopic(usr)
 		return OnTopic(usr, href_list, state)
 	CouldNotUseTopic(usr)
+	return TRUE
 
 /obj/proc/OnTopic(var/mob/user, var/href_list, var/datum/topic_state/state)
 	return TOPIC_NOACTION
@@ -18,7 +23,7 @@
 	var/id = src.GetIdCard()
 	if(id && O.check_access(id))
 		return TRUE
-	to_chat(src, "<span class='danger'>\icon[src]Access Denied!</span>")
+	to_chat(src, "<span class='danger'>\icon[src] Access Denied!</span>")
 	return FALSE
 
 /mob/proc/CanUseObjTopic()

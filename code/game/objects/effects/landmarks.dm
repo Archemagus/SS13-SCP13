@@ -10,8 +10,6 @@
 
 /obj/effect/landmark/New()
 	..()
-
-	global.landmark_list += src
 	tag = "landmark*[name]"
 
 	//TODO clean up this mess
@@ -24,27 +22,6 @@
 			GLOB.newplayer_start += loc
 			delete_me = 1
 			return
-		if ("scp106")
-			new /mob/living/carbon/human/scp106 (loc)
-			GLOB.scp106_spawnpoints += loc
-			delete_me = 1
-			return
-		if ("scp049")
-			new /mob/living/carbon/human/scp049 (loc)
-			delete_me = 1
-			return
-		if ("scp173")
-			new /mob/living/scp_173 (loc)
-			delete_me = 1
-			return
-		if ("scp999")
-			new /mob/living/simple_animal/scp_999 (loc)
-			delete_me = 1
-			return
-		if("scp420j")
-			GLOB.possible_420j += loc
-			delete_me = 1
-			return
 		if("JoinLate")
 			GLOB.latejoin += loc
 			delete_me = 1
@@ -55,22 +32,6 @@
 			return
 		if("JoinLateCryo")
 			GLOB.latejoin_cryo += loc
-			delete_me = 1
-			return
-		if("JoinLateDclass")
-			GLOB.latejoin_dclass += loc
-			delete_me = 1
-			return
-		if("JoinLateComms")
-			GLOB.latejoin_comms += loc
-			delete_me = 1
-			return
-		if("JoinLatelcz")
-			GLOB.latejoin_lcz += loc
-			delete_me = 1
-			return
-		if("JoinLateSecurity")
-			GLOB.latejoin_security += loc
 			delete_me = 1
 			return
 		if("JoinLateCyborg")
@@ -102,6 +63,7 @@
 			delete_me = 1
 			return
 
+	landmarks_list += src
 	return 1
 
 /obj/effect/landmark/proc/delete()
@@ -113,7 +75,7 @@
 		return INITIALIZE_HINT_QDEL
 
 /obj/effect/landmark/Destroy()
-	global.landmark_list -= src
+	landmarks_list -= src
 	return ..()
 
 /obj/effect/landmark/start
@@ -271,6 +233,10 @@
 	new /obj/item/clothing/under/sexymime(src.loc)
 	delete_me = 1
 
+/obj/effect/landmark/ban_prison
+	name = "ban_prison"
+	desc = "Ban is here."
+
 /obj/effect/landmark/costume/savagehunter/New()
 	new /obj/item/clothing/mask/spirit(src.loc)
 	new /obj/item/clothing/under/savage_hunter(src.loc)
@@ -319,8 +285,23 @@
 		min_y = max(src.y, min_y)
 		max_y = min(src.y + generation_height, max_y)
 
-	// don't hold up SSatoms
-	spawn(0)
-		new /datum/random_map/automata/cave_system(seed, min_x, min_y, src.z, max_x, max_y)
-		new /datum/random_map/noise/ore(seed, min_x, min_y, src.z, max_x, max_y)
-		GLOB.using_map.refresh_mining_turfs(src.z)
+	new /datum/random_map/automata/cave_system(seed, min_x, min_y, src.z, max_x, max_y)
+	new /datum/random_map/noise/ore(seed, min_x, min_y, src.z, max_x, max_y)
+
+	GLOB.using_map.refresh_mining_turfs(src.z)
+
+/obj/effect/landmark/explosion
+	name = "explosion landmarker"
+	delete_me = 1
+
+/obj/effect/landmark/explosion/light/Initialize()
+	explosion(src.loc, -1, -1, 2, 3)
+	..()
+
+/obj/effect/landmark/explosion/medium/Initialize()
+	explosion(src.loc, 1, 2, 4, 6)
+	..()
+
+/obj/effect/landmark/explosion/heavy/Initialize()
+	explosion(src.loc, 2, 4, 7, 10)
+	..()

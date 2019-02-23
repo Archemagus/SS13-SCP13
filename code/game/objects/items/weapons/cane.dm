@@ -8,8 +8,15 @@
 	force = 5.0
 	throwforce = 7.0
 	w_class = ITEM_SIZE_SMALL
-	matter = list(DEFAULT_WALL_MATERIAL = 50)
+	matter = list(MATERIAL_STEEL = 50)
 	attack_verb = list("bludgeoned", "whacked", "disciplined", "thrashed")
+	base_parry_chance = 30
+
+/obj/item/weapon/cane/afterattack(atom/target, mob/user, proximity_flag)
+	. = ..()
+	if((user.a_intent == I_HELP) && proximity_flag)
+		user.visible_message("<span class='notice'>[user] examines [target] with [src].</span>")
+		target.examine(user, show_message = FALSE)
 
 /obj/item/weapon/cane/concealed
 	var/concealed_blade
@@ -36,10 +43,8 @@
 		..()
 
 /obj/item/weapon/cane/concealed/attackby(var/obj/item/weapon/material/butterfly/W, var/mob/user)
-	if(!src.concealed_blade && istype(W))
+	if(!src.concealed_blade && istype(W) && user.unEquip(W, src))
 		user.visible_message("<span class='warning'>[user] has sheathed \a [W] into [src]!</span>", "You sheathe \the [W] into [src].")
-		user.drop_from_inventory(W)
-		W.loc = src
 		src.concealed_blade = W
 		update_icon()
 		user.update_inv_l_hand()
@@ -47,7 +52,7 @@
 	else
 		..()
 
-/obj/item/weapon/cane/concealed/update_icon()
+/obj/item/weapon/cane/concealed/on_update_icon()
 	if(concealed_blade)
 		SetName(initial(name))
 		icon_state = initial(icon_state)

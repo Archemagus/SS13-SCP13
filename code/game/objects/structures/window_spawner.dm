@@ -5,7 +5,7 @@
 
 /obj/effect/wingrille_spawn
 	name = "window grille spawner"
-	icon = 'icons/obj/structures.dmi'
+	icon = 'icons/obj/structures_inf.dmi'
 	icon_state = "wingrille"
 	density = 1
 	anchored = 1.0
@@ -35,7 +35,7 @@
 	// once all your ducks are in a row. So if we're already playing, only
 	// auto-activate if this has been put down by a maploader, not a creative admin
 	// see https://github.com/Baystation12/Baystation12/pull/9907#issuecomment-114896669
-	var/auto_activate = mapload || (ticker && ticker.current_state < GAME_STATE_PLAYING)
+	var/auto_activate = mapload || (GAME_STATE < RUNLEVEL_GAME)
 
 	if(auto_activate)
 		activate()

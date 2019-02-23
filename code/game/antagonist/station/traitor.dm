@@ -1,17 +1,12 @@
-var/datum/antagonist/traitor/traitors
+GLOBAL_DATUM_INIT(traitors, /datum/antagonist/traitor, new)
 
 // Inherits most of its vars from the base datum.
 /datum/antagonist/traitor
 	id = MODE_TRAITOR
-	protected_jobs = list(/datum/job/assistant, /datum/job/captain, /datum/job/hos, /datum/job/rd, /datum/job/o5rep, /datum/job/commsofficer)
+	blacklisted_jobs = list(/datum/job/ai)
+	protected_jobs = list(/datum/job/officer, /datum/job/warden, /datum/job/detective, /datum/job/captain, /datum/job/lawyer, /datum/job/hos)
 	flags = ANTAG_SUSPICIOUS | ANTAG_RANDSPAWN | ANTAG_VOTABLE
-	role_text = "CI Operative"
-	role_text_plural = "CI Operatives"
-	welcome_text = "You are a CI Operative! You have infiltrated a Foundation site and have been tasked with completing a set of objectives!"
-
-/datum/antagonist/traitor/New()
-	..()
-	traitors = src
+	skill_setter = /datum/antag_skill_setter/station
 
 /datum/antagonist/traitor/get_extra_panel_options(var/datum/mind/player)
 	return "<a href='?src=\ref[player];common=crystals'>\[set crystals\]</a><a href='?src=\ref[src];spawn_uplink=\ref[player.current]'>\[spawn uplink\]</a>"
@@ -48,7 +43,12 @@ var/datum/antagonist/traitor/traitors
 				kill_objective.owner = traitor
 				kill_objective.find_target()
 				traitor.objectives += kill_objective
-			if(34 to 66)
+			if(34 to 50)
+				var/datum/objective/brig/brig_objective = new
+				brig_objective.owner = traitor
+				brig_objective.find_target()
+				traitor.objectives += brig_objective
+			if(51 to 66)
 				var/datum/objective/harm/harm_objective = new
 				harm_objective.owner = traitor
 				harm_objective.find_target()
@@ -58,18 +58,18 @@ var/datum/antagonist/traitor/traitors
 				steal_objective.owner = traitor
 				steal_objective.find_target()
 				traitor.objectives += steal_objective
-		switch(rand(1,100))
-			if(1 to 100)
+		switch(rand(1,10))
+			if(1)
 				if (!(locate(/datum/objective/escape) in traitor.objectives))
 					var/datum/objective/escape/escape_objective = new
 					escape_objective.owner = traitor
 					traitor.objectives += escape_objective
 
 			else
-				if (!(locate(/datum/objective/hijack) in traitor.objectives))
-					var/datum/objective/hijack/hijack_objective = new
-					hijack_objective.owner = traitor
-					traitor.objectives += hijack_objective
+				if (!(locate(/datum/objective/survive) in traitor.objectives))
+					var/datum/objective/survive/survive_objective = new
+					survive_objective.owner = traitor
+					traitor.objectives += survive_objective
 	return
 
 /datum/antagonist/traitor/equip(var/mob/living/carbon/human/traitor_mob)
@@ -92,10 +92,18 @@ var/datum/antagonist/traitor/traitors
 	give_codewords(traitor_mob)
 
 /datum/antagonist/traitor/proc/give_collaborators(mob/living/traitor_mob)
-	var/mob/living/carbon/human/M = get_nt_opposed()
-	if(M && M != traitor_mob)
+	var/list/dudes = list()
+	for(var/mob/living/carbon/human/man in GLOB.player_list)
+		if(man.client)
+			var/decl/cultural_info/culture = man.get_cultural_value(TAG_FACTION)
+			if(culture && prob(culture.subversive_potential))
+				dudes += man
+		dudes -= traitor_mob
+	if(LAZYLEN(dudes))
+		var/mob/living/carbon/human/M = pick(dudes)
 		to_chat(traitor_mob, "We have received credible reports that [M.real_name] might be willing to help our cause. If you need assistance, consider contacting them.")
 		traitor_mob.mind.store_memory("<b>Potential Collaborator</b>: [M.real_name]")
+		to_chat(M, "<span class='warning'>The subversive potential of your faction has been noticed, and you may be contacted for assistance soon...</span>")
 
 /datum/antagonist/traitor/proc/give_codewords(mob/living/traitor_mob)
 	to_chat(traitor_mob, "<u><b>Your employers provided you with the following information on how to identify possible allies:</b></u>")

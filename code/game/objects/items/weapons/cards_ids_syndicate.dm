@@ -1,5 +1,4 @@
 /obj/item/weapon/card/id/syndicate
-	name = "agent card"
 	icon_state = "syndicate"
 	assignment = "Agent"
 	origin_tech = list(TECH_ILLEGAL = 3)
@@ -46,6 +45,8 @@
 	var/data[0]
 	var/entries[0]
 	entries[++entries.len] = list("name" = "Age", 				"value" = age)
+	entries[++entries.len] = list("name" = "Prefix", 			"value" = formal_name_prefix)
+	entries[++entries.len] = list("name" = "Suffix", 			"value" = formal_name_suffix)
 	entries[++entries.len] = list("name" = "Appearance",		"value" = "Set")
 	entries[++entries.len] = list("name" = "Assignment",		"value" = assignment)
 	if(GLOB.using_map.flags & MAP_HAS_BRANCH)
@@ -62,7 +63,7 @@
 	data["electronic_warfare"] = electronic_warfare
 	data["entries"] = entries
 
-	ui = GLOB.nanomanager.try_update_ui(user, src, ui_key, ui, data, force_open)
+	ui = SSnano.try_update_ui(user, src, ui_key, ui, data, force_open)
 	if (!ui)
 		ui = new(user, src, ui_key, "agent_id_card.tmpl", "Agent id", 600, 400)
 		ui.set_initial_data(data)
@@ -107,6 +108,18 @@
 						age = new_age
 					to_chat(user, "<span class='notice'>Age has been set to '[age]'.</span>")
 					. = 1
+			if("Prefix")
+				var/new_prefix = sanitizeSafe(input(user,"What title prefix would you like to put on this card?","Agent Card Prefix", age) as text, MAX_NAME_LEN)
+				if(!isnull(new_prefix) && CanUseTopic(user, state))
+					formal_name_prefix = new_prefix
+					to_chat(user, "<span class='notice'>Title prefix has been set to '[formal_name_prefix]'.</span>")
+					. = 1
+			if("Suffix")
+				var/new_suffix = sanitizeSafe(input(user,"What title suffix would you like to put on this card?","Agent Card Suffix", age) as text, MAX_NAME_LEN)
+				if(!isnull(new_suffix) && CanUseTopic(user, state))
+					formal_name_suffix = new_suffix
+					to_chat(user, "<span class='notice'>Title suffix has been set to '[formal_name_suffix]'.</span>")
+					. = 1
 			if("Appearance")
 				var/datum/card_state/choice = input(user, "Select the appearance for this card.", "Agent Card Appearance") as null|anything in id_card_states()
 				if(choice && CanUseTopic(user, state))
@@ -119,7 +132,6 @@
 				if(!isnull(new_job) && CanUseTopic(user, state))
 					src.assignment = new_job
 					to_chat(user, "<span class='notice'>Occupation changed to '[new_job]'.</span>")
-					update_name()
 					. = 1
 			if("Blood Type")
 				var/default = blood_type
@@ -158,7 +170,6 @@
 				var/new_name = sanitizeName(input(user,"What name would you like to put on this card?","Agent Card Name", registered_name) as null|text, allow_numbers=TRUE)
 				if(!isnull(new_name) && CanUseTopic(user, state))
 					src.registered_name = new_name
-					update_name()
 					to_chat(user, "<span class='notice'>Name changed to '[new_name]'.</span>")
 					. = 1
 			if("Photo")
@@ -174,6 +185,8 @@
 			if("Factory Reset")
 				if(alert("This will factory reset the card, including access and owner. Continue?", "Factory Reset", "No", "Yes") == "Yes" && CanUseTopic(user, state))
 					age = initial(age)
+					formal_name_prefix = initial(formal_name_prefix)
+					formal_name_suffix = initial(formal_name_suffix)
 					access = syndicate_access.Copy()
 					assignment = initial(assignment)
 					blood_type = initial(blood_type)
@@ -203,7 +216,7 @@
 					. = 1
 
 	// Always update the UI, or buttons will spin indefinitely
-	GLOB.nanomanager.update_uis(src)
+	SSnano.update_uis(src)
 
 /var/global/list/id_card_states
 /proc/id_card_states()

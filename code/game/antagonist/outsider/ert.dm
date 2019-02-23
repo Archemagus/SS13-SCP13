@@ -1,4 +1,4 @@
-var/datum/antagonist/ert/ert
+GLOBAL_DATUM_INIT(ert, /datum/antagonist/ert, new)
 
 /datum/antagonist/ert
 	id = MODE_ERT
@@ -28,25 +28,15 @@ var/datum/antagonist/ert/ert
 	var/mob/living/carbon/human/M = ..()
 	if(istype(M)) M.age = rand(25,45)
 
-/datum/antagonist/ert/New()
+/datum/antagonist/ert/Initialize()
 	..()
 	leader_welcome_text = "As leader of Mobile Task Force Epsilon-11, you answer only to the O5 Council, and have authority to override the Site staff where it is necessary to achieve your mission goals. It is recommended that you attempt to cooperate with the site staff where possible, however."
-	ert = src
+	welcome_text = "As member of the Mobile Task Force Epsilon-11, you answer only to your leader and [GLOB.using_map.company_name] officials."
 
 /datum/antagonist/ert/greet(var/datum/mind/player)
 	if(!..())
 		return
-	to_chat(player.current, "The Mobile Task Force works for the O5 Council; your job is to contain loose SCPs and eliminate infiltrators. There is a code red alert at [station_name()], you are tasked to go and fix the problem.")
+		to_chat(player.current, "The Mobile Task Force works for the [GLOB.using_map.company_name]; your job is to contain loose SCPs and eliminate infiltrators. There is a code red alert at [station_name()], you are tasked to go and fix the problem.")
 	to_chat(player.current, "You should first gear up and discuss a plan with your team. More members may be joining, don't move out before you're ready.")
 
-/datum/antagonist/ert/equip(var/mob/living/carbon/human/player)
-
-	//Special radio setup
-	player.equip_to_slot_or_del(new /obj/item/device/radio/headset/ert(src), slot_l_ear)
-	player.equip_to_slot_or_del(new /obj/item/clothing/under/ert(src), slot_w_uniform)
-	player.equip_to_slot_or_del(new /obj/item/clothing/shoes/swat(src), slot_shoes)
-	player.equip_to_slot_or_del(new /obj/item/clothing/gloves/thick/swat(src), slot_gloves)
-	player.equip_to_slot_or_del(new /obj/item/clothing/glasses/sunglasses(src), slot_glasses)
-
-	create_id(role_text, player)
-	return 1
+//Equip proc has been moved to the map specific folders.

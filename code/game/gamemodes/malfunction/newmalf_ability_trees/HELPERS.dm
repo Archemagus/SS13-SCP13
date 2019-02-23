@@ -64,6 +64,14 @@
 	set category = "Hardware"
 	set name = "Display Help"
 	set desc = "Opens help window with overview of available hardware, software and other important information."
+	var/mob/living/silicon/ai/user = usr
+
+	var/help = file2text('ingame_manuals/malf_ai.html')
+	if(!help)
+		help = "Error loading help (file /ingame_manuals/malf_ai.html is probably missing). Please report this to server administration staff."
+
+	user << browse(help, "window=malf_ai_help;size=600x500")
+
 
 // Verb: ai_select_research()
 // Parameters: None
@@ -164,7 +172,7 @@
 	var/list/station_apcs = list()
 	var/list/offstation_apcs = list()
 
-	for(var/obj/machinery/power/apc/A in SSmachines.all_machinery)
+	for(var/obj/machinery/power/apc/A in SSmachines.machinery)
 		if(A.hacker && A.hacker == user)
 			continue
 		if(A.z in GLOB.using_map.station_levels)
@@ -183,7 +191,7 @@
 		return
 
 	var/list/L = list()
-	for(var/mob/living/silicon/robot/RB in GLOB.mob_list)
+	for(var/mob/living/silicon/robot/RB in SSmobs.mob_list)
 		if(istype(RB, /mob/living/silicon/robot/drone))
 			continue
 		if(RB.connected_ai == A)
@@ -201,7 +209,7 @@
 		return
 
 	var/list/L = list()
-	for(var/mob/living/silicon/ai/AT in GLOB.mob_list)
+	for(var/mob/living/silicon/ai/AT in SSmobs.mob_list)
 		if(L == A)
 			continue
 		L.Add(AT)
@@ -216,6 +224,6 @@
 	admin_attack_log(A, null, message, null, message)
 
 proc/check_for_interception()
-	for(var/mob/living/silicon/ai/A in GLOB.mob_list)
+	for(var/mob/living/silicon/ai/A in SSmobs.mob_list)
 		if(A.intercepts_communication)
 			return A

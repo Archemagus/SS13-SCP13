@@ -1,14 +1,14 @@
-var/datum/antagonist/raider/raiders
+GLOBAL_DATUM_INIT(raiders, /datum/antagonist/raider, new)
 
 /datum/antagonist/raider
 	id = MODE_RAIDER
 	role_text = "Raider"
 	role_text_plural = "Raiders"
-	antag_indicator = "hudmutineer"
+	antag_indicator = "hudraider"
 	landmark_id = "voxstart"
-	welcome_text = "Use :H to talk on your encrypted channel."
+	welcome_text = "Используйте префикс ':t' чтобы общатьс&#255; на частоте вашей банды."
 	flags = ANTAG_OVERRIDE_JOB | ANTAG_CLEAR_EQUIPMENT | ANTAG_CHOOSE_NAME | ANTAG_VOTABLE | ANTAG_SET_APPEARANCE | ANTAG_HAS_LEADER
-	antaghud_indicator = "hudmutineer"
+	antaghud_indicator = "hudraider"
 
 	hard_cap = 6
 	hard_cap_round = 10
@@ -88,6 +88,7 @@ var/datum/antagonist/raider/raiders
 		/obj/item/weapon/gun/projectile/shotgun/doublebarrel,
 		/obj/item/weapon/gun/projectile/shotgun/doublebarrel/pellet,
 		/obj/item/weapon/gun/projectile/shotgun/doublebarrel/sawn,
+		/obj/item/weapon/gun/projectile/beretta,
 		/obj/item/weapon/gun/projectile/colt,
 		/obj/item/weapon/gun/projectile/sec,
 		/obj/item/weapon/gun/projectile/pistol,
@@ -96,14 +97,10 @@ var/datum/antagonist/raider/raiders
 		)
 
 	var/list/raider_holster = list(
-		/obj/item/clothing/accessory/holster/armpit,
-		/obj/item/clothing/accessory/holster/waist,
-		/obj/item/clothing/accessory/holster/hip
+		/obj/item/clothing/accessory/storage/holster/armpit,
+		/obj/item/clothing/accessory/storage/holster/waist,
+		/obj/item/clothing/accessory/storage/holster/hip
 		)
-
-/datum/antagonist/raider/New()
-	..()
-	raiders = src
 
 /datum/antagonist/raider/update_access(var/mob/living/player)
 	for(var/obj/item/weapon/storage/wallet/W in player.contents)
@@ -239,22 +236,26 @@ var/datum/antagonist/raider/raiders
 	var/turf/T = get_turf(player)
 
 	var/obj/item/primary = new new_gun(T)
-	var/obj/item/clothing/accessory/holster/holster = null
+	var/obj/item/clothing/accessory/storage/holster/holster = null
 
 	//Give some of the raiders a pirate gun as a secondary
+/*
 	if(prob(60))
 		var/obj/item/secondary = new /obj/item/weapon/gun/projectile/pirate(T)
 		if(!(primary.slot_flags & SLOT_HOLSTER))
 			holster = new new_holster(T)
-			holster.holstered = secondary
+			var/datum/extension/holster/H = get_extension(holster, /datum/extension/holster)
+			H.holstered = secondary
 			secondary.forceMove(holster)
 		else
 			player.equip_to_slot_or_del(secondary, slot_belt)
-
+*/
 	if(primary.slot_flags & SLOT_HOLSTER)
 		holster = new new_holster(T)
-		holster.holstered = primary
-		primary.forceMove(holster)
+//		var/datum/extension/holster/H = get_extension(holster, /datum/extension/holster)
+//		H.holstered = primary
+		holster.attackby(primary, player)
+//		primary.forceMove(holster)
 	else if(!player.belt && (primary.slot_flags & SLOT_BELT))
 		player.equip_to_slot_or_del(primary, slot_belt)
 	else if(!player.back && (primary.slot_flags & SLOT_BACK))

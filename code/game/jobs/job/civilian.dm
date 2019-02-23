@@ -1,8 +1,7 @@
 //Food
-/*
 /datum/job/bartender
 	title = "Bartender"
-	department = "Civilian"
+	department = "Service"
 	department_flag = SRV
 	total_positions = 1
 	spawn_positions = 1
@@ -14,7 +13,7 @@
 
 /datum/job/chef
 	title = "Chef"
-	department = "Civilian"
+	department = "Service"
 	department_flag = SRV
 	total_positions = 2
 	spawn_positions = 2
@@ -47,7 +46,7 @@
 	spawn_positions = 1
 	supervisors = "the head of personnel"
 	selection_color = "#515151"
-	economic_modifier = 5
+	economic_power = 5
 	access = list(access_maint_tunnels, access_mailsorting, access_cargo, access_cargo_bot, access_qm, access_mining, access_mining_station)
 	minimal_access = list(access_maint_tunnels, access_mailsorting, access_cargo, access_cargo_bot, access_qm, access_mining, access_mining_station)
 	minimal_player_age = 3
@@ -74,7 +73,7 @@
 	spawn_positions = 3
 	supervisors = "the quartermaster and the head of personnel"
 	selection_color = "#515151"
-	economic_modifier = 5
+	economic_power = 5
 	access = list(access_maint_tunnels, access_mailsorting, access_cargo, access_cargo_bot, access_qm, access_mining, access_mining_station)
 	minimal_access = list(access_mining, access_mining_station, access_mailsorting)
 	alt_titles = list("Drill Technician","Prospector")
@@ -115,9 +114,9 @@
 	spawn_positions = 2
 	supervisors = "company officials and Corporate Regulations"
 	selection_color = "#515151"
-	economic_modifier = 7
-	access = list(access_lawyer, access_sec_doors, access_maint_tunnels, access_heads)
-	minimal_access = list(access_lawyer, access_sec_doors, access_heads)
+	economic_power = 7
+	access = list(access_lawyer, access_sec_doors, access_maint_tunnels, access_bridge)
+	minimal_access = list(access_lawyer, access_sec_doors, access_bridge)
 	minimal_player_age = 10
 	outfit_type = /decl/hierarchy/outfit/job/internal_affairs_agent
 
@@ -125,77 +124,3 @@
 	. = ..()
 	if(.)
 		H.implant_loyalty(H)
-*/
-
-/datum/job/janitor
-	title = "Janitor"
-	department = "Civilian"
-	department_flag = CIV
-	total_positions = 2
-	spawn_positions = 2
-	supervisors = "the Head of Personnel"
-	ideal_character_age = 24
-	alt_titles = list("Interior caretaker")
-	selection_color = "#515151"
-	outfit_type = /decl/hierarchy/outfit/job/site90/crew/civ/janitor
-	allowed_branches = list(
-		/datum/mil_branch/civilian
-	)
-	allowed_ranks = list(
-	/datum/mil_rank/civ/classd
-	)
-
-	access = list(access_sciencelvl1)
-	minimal_access = list()
-
-/datum/job/chef
-	has_email = TRUE
-	title = "Chef"
-	department = "Civilian"
-	department_flag = CIV
-	total_positions = 1
-	spawn_positions = 1
-	supervisors = "the Head of Personnel"
-	selection_color = "#515151"
-	ideal_character_age = 24
-	alt_titles = list("Cook")
-	outfit_type = /decl/hierarchy/outfit/job/site90/crew/civ/chef
-	allowed_branches = list(
-		/datum/mil_branch/civilian
-	)
-	allowed_ranks = list(
-	/datum/mil_rank/civ/classd
-	)
-	equip(var/mob/living/carbon/human/H)
-		..()
-		H.add_stats(rand(1,3), rand(0,3), rand(5,10)) // Str, Dex, Int.
-		H.add_skills(rand(5,10), rand(5,10), rand(5,10), rand(5,10)) // Melee, Ranged, Medical, Engineering.
-
-	access = list(access_sciencelvl1)
-	minimal_access = list()
-
-/datum/job/bartender
-	has_email = TRUE
-	title = "Bartender"
-	department = "Civilian"
-	department_flag = CIV
-	total_positions = 1
-	spawn_positions = 1
-	supervisors = "the Head of Personnel"
-	selection_color = "#515151"
-	ideal_character_age = 24
-	alt_titles = list("Waiter")
-	outfit_type = /decl/hierarchy/outfit/job/site90/crew/civ/bartender
-	allowed_branches = list(
-		/datum/mil_branch/civilian
-	)
-	allowed_ranks = list(
-	/datum/mil_rank/civ/classd
-	)
-	equip(var/mob/living/carbon/human/H)
-		..()
-		H.add_stats(rand(1,3), rand(0,3), rand(5,10)) // Str, Dex, Int.
-		H.add_skills(rand(5,10), rand(5,10), rand(5,10), rand(5,10)) // Melee, Ranged, Medical, Engineering.
-
-	access = list(access_sciencelvl1)
-	minimal_access = list()

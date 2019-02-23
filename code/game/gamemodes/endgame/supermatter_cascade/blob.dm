@@ -11,20 +11,18 @@
 	plane = EFFECTS_ABOVE_LIGHTING_PLANE
 	layer = SUPERMATTER_WALL_LAYER
 
-	var/next_check=0
 	var/list/avail_dirs = list(NORTH,SOUTH,EAST,WEST,UP,DOWN)
 
 /turf/unsimulated/wall/supermatter/New()
 	..()
 	START_PROCESSING(SSturf, src)
-	next_check = world.time + 5 SECONDS
 
 	// Nom.
 	for(var/atom/movable/A in src)
 		Consume(A)
 
 /turf/unsimulated/wall/supermatter/Destroy()
-	STOP_PROCESSING(SSturf, src)
+	STOP_PROCESSING(SSturf, src)	
 	. = ..()
 
 /turf/unsimulated/wall/supermatter/Process(wait, times_fired)
@@ -50,7 +48,6 @@
 			if(istype(T,type)) // In case another blob came first, don't create another blob
 				return
 			T.ChangeTurf(type)
-
 
 /turf/unsimulated/wall/supermatter/attack_generic(mob/user as mob)
 	if(istype(user))

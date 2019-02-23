@@ -6,6 +6,7 @@
 	layer = ABOVE_WINDOW_LAYER
 	opacity = 1
 	density = 0
+	anchored = TRUE
 
 /obj/structure/curtain/open
 	icon_state = "open"
@@ -21,11 +22,11 @@
 		..(P, def_zone)
 
 /obj/structure/curtain/attack_hand(mob/user)
-	playsound(get_turf(loc), "rustle", 15, 1, -5)
 	toggle()
 	..()
 
 /obj/structure/curtain/proc/toggle()
+	playsound(get_turf(loc), 'sound/effects/curtain.ogg', 15, 1, -5)
 	set_opacity(!opacity)
 	if(opacity)
 		icon_state = "closed"
@@ -49,9 +50,17 @@
 	name = "bed curtain"
 	color = "#854636"
 
+/obj/structure/curtain/open/bar
+	name = "bar curtain"
+	color = "#854636"
+
 /obj/structure/curtain/open/privacy
 	name = "privacy curtain"
 	color = "#b8f5e3"
+
+/obj/structure/curtain/open/canteen
+	name = "privacy curtain"
+	color = COLOR_BLUE_GRAY
 
 /obj/structure/curtain/open/shower
 	name = "shower curtain"
@@ -63,6 +72,3 @@
 
 /obj/structure/curtain/open/shower/security
 	color = "#aa0000"
-
-#undef SHOWER_OPEN_LAYER
-#undef SHOWER_CLOSED_LAYER

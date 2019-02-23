@@ -7,9 +7,17 @@
 
 	var/list/Lines = list()
 
+	//for admins
+	var/living = 0 //Currently alive and in the round (possibly unconscious, but not officially dead)
+	var/dead = 0 //Have been in the round but are now deceased
+	var/observers = 0 //Have never been in the round (thus observing)
+	var/lobby = 0 //Are currently in the lobby
+	var/living_antags = 0 //Are antagonists, and currently alive
+	var/dead_antags = 0 //Are antagonists, and have finally met their match
+
 	if(check_rights(R_INVESTIGATE, 0))
-		for(var/client in GLOB.clients)
-			var/client/C = client
+		game_log("ADMIN", "[usr.key] checked advanced who in-round.")
+		for(var/client/C in GLOB.clients)
 			var/entry = "\t[C.key]"
 			if(!C.mob) //If mob is null, print error and skip rest of info for client.
 				entry += " - <font color='red'><i>HAS NO MOB</i></font>"
@@ -20,15 +28,24 @@
 			switch(C.mob.stat)
 				if(UNCONSCIOUS)
 					entry += " - <font color='darkgray'><b>Unconscious</b></font>"
+					living++
 				if(DEAD)
 					if(isghost(C.mob))
 						var/mob/observer/ghost/O = C.mob
 						if(O.started_as_observer)
-							entry += " - <font color='gray'>Observing</font>"
+							entry += " - <span style='color:gray'>Observing</span>"
+							observers++
 						else
-							entry += " - <font color='black'><b>DEAD</b></font>"
+							entry += " - <b>DEAD</b>"
+							dead++
+					else if(isnewplayer(C.mob))
+						entry += " - <span style='color:gray'><i>Lobby</i></span>"
+						lobby++
 					else
-						entry += " - <font color='black'><b>DEAD</b></font>"
+						entry += " - <b>DEAD</b>"
+						dead++
+				else
+					living++
 
 			var/age
 			if(isnum(C.player_age))
@@ -45,6 +62,10 @@
 
 			if(is_special_character(C.mob))
 				entry += " - <b><font color='red'>Antagonist</font></b>"
+				if(istype(C.mob, /mob/observer/ghost) && C.mob.stat == DEAD)
+					dead_antags++
+				else
+					living_antags++
 			if(C.is_afk())
 				entry += " (AFK - [C.inactivity2text()])"
 			entry += " (<A HREF='?_src_=holder;adminmoreinfo=\ref[C.mob]'>?</A>)"
@@ -52,92 +73,36 @@
 	else
 		for(var/client/C in GLOB.clients)
 			if(!C.is_stealthed())
-				Lines += C.key
+				var/entry = "[C.key]"
+				switch(C.mob.stat)
+					if(DEAD)
+						if(isghost(C.mob))
+							var/mob/observer/ghost/O = C.mob
+							if(O.started_as_observer)
+								entry += " - <font color='gray'><b>Observing</b></font>"
+							else
+								entry += " - <font color='green'><b>Playing</b></font>"
+						else if(isnewplayer(C.mob))
+							entry += " - <font color='blue'><b>In Lobby</b></font>"
+					else
+						entry += " - <font color='green'><b>Playing</b></font>"
+
+				if(C.is_afk())
+					entry += " - <b>AFK: [C.inactivity2text()]</b>"
+
+				Lines += entry
 
 	for(var/line in sortList(Lines))
 		msg += "[line]\n"
 
-	msg += "<b>Total Players: [length(Lines)]</b>"
-	to_chat(src, msg)
+	if(check_rights(R_INVESTIGATE, 0))
+		msg += "<b><span class='notice'>Total Living: [living]</span> | Total Dead: [dead] | <span style='color:gray'>Observing: [observers]</span> | <span style='color:gray'><i>In Lobby: [lobby]</i></span> | <span class='bad'>Living Antags: [living_antags]</span> | <span class='good'>Dead Antags: [dead_antags]</span></b>\n"
+		msg += "<b>Total Players: [length(Lines)]</b>\n"
+		to_chat(src, msg)
+	else
+		msg += "<b>Total Players: [length(Lines)]</b>"
+		to_chat(src, msg)
 
-//New SEXY Staffwho verb
-/client/verb/staffwho()
-	set category = "Admin"
-	set name = "StaffWho"
-	var/adminwho = ""
-	var/modwho = ""
-	var/mentwho = ""
-	var/devwho = ""
-	var/admin_count = 0
-	var/mod_count = 0
-	var/ment_count = 0
-	var/dev_count = 0
-
-	for(var/client in GLOB.admins)
-		var/client/C = client
-		if(C.is_stealthed() && !check_rights(R_MOD|R_ADMIN, 0, src)) // Normal players and mentors can't see stealthmins
-			continue
-
-		var/extra = ""
-		if(holder)
-			if(C.is_stealthed())
-				extra += " (Stealthed)"
-			if(isobserver(C.mob))
-				extra += " - Observing"
-			else if(istype(C.mob,/mob/new_player))
-				extra += " - Lobby"
-			else
-				extra += " - Playing"
-			if(C.is_afk())
-				extra += " (AFK)"
-
-		if(R_ADMIN & C.holder.rights)
-			adminwho += "\t[C] is a <b>[C.holder.rank]</b>[extra]\n"
-			admin_count++
-		else if (R_MOD & C.holder.rights)
-			modwho += "\t[C] is a <i>[C.holder.rank]</i>[extra]\n"
-			mod_count++
-		else if (R_MENTOR & C.holder.rights)
-			mentwho += "\t[C] is a [C.holder.rank][extra]\n"
-			ment_count++
-		else if (R_DEBUG & C.holder.rights)
-			devwho += "\t[C] is a [C.holder.rank][extra]\n"
-			dev_count++
-
-	to_chat(src, "<b><big>Online staff:</big></b>")
-	to_chat(src, "<b>Current Admins ([admin_count]):</b><br>[adminwho]<br>")
-	to_chat(src, "<b>Current Moderators ([mod_count]):</b><br>[modwho]<br>")
-	to_chat(src, "<b>Current Mentors ([ment_count]):</b><br>[mentwho]<br>")
-	to_chat(src, "<b>Current Developers ([dev_count]):</b><br>[devwho]<br>")
-
-/client/verb/donatorwho()
-	set category = "Admin"
-	set name = "DonatorWho"
-	var/donators = ""
-	var/donator_count = 0
-	for(var/client in GLOB.donators)
-		var/client/C = client
-		if(C.is_stealthed() && !check_rights(R_MOD|R_ADMIN, 0, src)) // Normal players and mentors can't see stealthmins
-			continue
-		var/extra = ""
-		if(holder)
-			if(C.is_stealthed())
-				extra += " (Stealthed)"
-			if(isobserver(C.mob))
-				extra += " - Observing"
-			else if(istype(C.mob,/mob/new_player))
-				extra += " - Lobby"
-			else
-				extra += " - Playing"
-			if(C.is_afk())
-				extra += " (AFK)"
-		if(C.donator_holder && C.donator_holder.flags)
-			donators += "\t[C]</b>[extra]\n"
-			donator_count++
-	to_chat(src, "<b><big>Online Donators ([donator_count]):</big></b>")
-	to_chat(src, donators)
-
-/* OLD STUFF.
 /client/verb/staffwho()
 	set category = "Admin"
 	set name = "Staffwho"
@@ -169,6 +134,14 @@
 				line += " - Playing"
 			if(C.is_stealthed())
 				line += " (Stealthed)"
+			if(C.get_preference_value(/datum/client_preference/show_ooc) == GLOB.PREF_HIDE)
+				line += " <font color='#002eb8'><b><s>(OOC)</s></b></font>"
+			if(C.get_preference_value(/datum/client_preference/show_looc) == GLOB.PREF_HIDE)
+				line += " <font color='#3a9696'><b><s>(LOOC)</s></b></font>"
+			if(C.get_preference_value(/datum/client_preference/show_aooc) == GLOB.PREF_HIDE)
+				line += " <font color='#960018'><b><s>(AOOC)</s></b></font>"
+			if(C.get_preference_value(/datum/client_preference/show_dsay) == GLOB.PREF_HIDE)
+				line += " <font color='#530fad'><b><s>(DSAY)</s></b></font>"
 		line = jointext(line,null)
 		if(check_rights(R_ADMIN,0,C))
 			msg.Insert(1, line)
@@ -179,5 +152,3 @@
 		to_chat(src, "<span class='info'>Adminhelps are also sent to IRC. If no admins are available in game try anyway and an admin on IRC may see it and respond.</span>")
 	to_chat(src, "<b>Current Staff ([active_staff]/[total_staff]):</b>")
 	to_chat(src, jointext(msg,"\n"))
-
-*/

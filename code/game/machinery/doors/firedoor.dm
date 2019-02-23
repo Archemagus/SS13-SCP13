@@ -15,12 +15,12 @@
 	var/panel_file = 'icons/obj/doors/hazard/panel.dmi'
 	var/welded_file = 'icons/obj/doors/hazard/welded.dmi'
 	icon_state = "open"
-	req_one_access = list(access_mtflvl1)
+	req_one_access = list(access_atmospherics, access_engine_equip)
 	opacity = 0
 	density = 0
 	layer = BELOW_DOOR_LAYER
 	open_layer = BELOW_DOOR_LAYER
-	closed_layer = ABOVE_DOOR_LAYER
+	closed_layer = ABOVE_WINDOW_LAYER
 
 	//These are frequenly used with windows, so make sure zones can pass.
 	//Generally if a firedoor is at a place where there should be a zone boundery then there will be a regular door underneath it.
@@ -51,7 +51,7 @@
 		"cold"
 	)
 
-	blend_objects = list(/obj/machinery/door/firedoor, /obj/structure/wall_frame, /turf/unsimulated/wall, /obj/structure/window) // Objects which to blend with
+	blend_objects = list(/obj/machinery/door/firedoor, /turf/simulated/wall) // Objects which to blend with
 
 /obj/machinery/door/firedoor/Initialize()
 	. = ..()
@@ -75,8 +75,22 @@
 		LAZYREMOVE(A.all_doors, src)
 	. = ..()
 
+/obj/machinery/door/firedoor/attack_generic(var/mob/user, var/damage)
+	if(stat & (BROKEN|NOPOWER))
+		if(damage >= 10)
+			if(src.density)
+				visible_message("<span class='danger'>\The [user] forces \the [src] open!</span>")
+				open(1)
+			else
+				visible_message("<span class='danger'>\The [user] forces \the [src] closed!</span>")
+				close(1)
+		else
+			visible_message("<span class='notice'>\The [user] strains fruitlessly to force \the [src] [density ? "open" : "closed"].</span>")
+		return
+	..()
+
 /obj/machinery/door/firedoor/get_material()
-	return get_material_by_name(DEFAULT_WALL_MATERIAL)
+	return SSmaterials.get_material_by_name(MATERIAL_STEEL)
 
 /obj/machinery/door/firedoor/examine(mob/user)
 	. = ..(user, 1)
@@ -167,11 +181,9 @@
 			// Accountability!
 			users_to_open |= user.name
 			needs_to_close = !issilicon(user)
-		spawn()
-			open()
+		OPEN_IN(src, 0, FALSE)
 	else
-		spawn()
-			close()
+		CLOSE_IN(src, 0, FALSE)
 
 	if(needs_to_close)
 		spawn(50)
@@ -254,11 +266,9 @@
 						"You force \the [ blocked ? "welded" : "" ] [src] [density ? "open" : "closed"] with \the [C]!",\
 						"You hear metal strain and groan, and a door [density ? "opening" : "closing"].")
 			if(density)
-				spawn(0)
-					open(1)
+				OPEN_IN(src, 0, TRUE)
 			else
-				spawn(0)
-					close()
+				CLOSE_IN(src, 0, FALSE)
 			return
 		else
 			to_chat(user, "<span class='notice'>You must remain still to interact with \the [src].</span>")
@@ -381,12 +391,14 @@
 	switch(animation)
 		if("opening")
 			flick("opening", src)
+			playsound(src, 'sound/machines/airlock_ext_open.ogg', 45, 1)
 		if("closing")
 			flick("closing", src)
+			playsound(src, 'sound/machines/airlock_ext_close.ogg', 45, 1)
 	return
 
 
-/obj/machinery/door/firedoor/update_icon()
+/obj/machinery/door/firedoor/on_update_icon()
 	var/icon/lights_overlay
 	var/icon/panel_overlay
 	var/icon/weld_overlay
@@ -430,40 +442,44 @@
 	overlays += weld_overlay
 	overlays += lights_overlay
 
-//These are playing merry hell on ZAS.  Sorry fellas :(
-
+//Single direction firedoors.
 /obj/machinery/door/firedoor/border_only
-/*
+/* //Infinity: We have fixed it, but bs12 are using them on Torch, so, they have no sprite. Sorry.
 	icon = 'icons/obj/doors/edge_Doorfire.dmi'
 	glass = 1 //There is a glass window so you can see through the door
 			  //This is needed due to BYOND limitations in controlling visibility
 	heat_proof = 1
 	air_properties_vary_with_direction = 1
-	CanPass(atom/movable/mover, turf/target, height=0, air_group=0)
-		if(istype(mover) && mover.checkpass(PASS_FLAG_GLASS))
-			return 1
-		if(get_dir(loc, target) == dir) //Make sure looking at appropriate border
-			if(air_group) return 0
-			return !density
-		else
-			return 1
-	CheckExit(atom/movable/mover as mob|obj, turf/target as turf)
-		if(istype(mover) && mover.checkpass(PASS_FLAG_GLASS))
-			return 1
-		if(get_dir(loc, target) == dir)
-			return !density
-		else
-			return 1
-	update_nearby_tiles(need_rebuild)
-		if(!air_master) return 0
-		var/turf/simulated/source = loc
-		var/turf/simulated/destination = get_step(source,dir)
-		update_heat_protection(loc)
-		if(istype(source)) air_master.tiles_to_update += source
-		if(istype(destination)) air_master.tiles_to_update += destination
-		return 1
-*/
 
+/obj/machinery/door/firedoor/border_only/CanPass(atom/movable/mover, turf/target, height=0, air_group=0)
+	if(istype(mover) && mover.checkpass(PASS_FLAG_GLASS))
+		return 1
+	if(get_dir(loc, target) == dir) //Make sure looking at appropriate border
+		if(air_group) return 0
+		return !density
+	else
+		return 1
+
+/obj/machinery/door/firedoor/border_only/CheckExit(atom/movable/mover as mob|obj, turf/target as turf)
+	if(istype(mover) && mover.checkpass(PASS_FLAG_GLASS))
+		return 1
+	if(get_dir(loc, target) == dir)
+		return !density
+	else
+		return 1
+
+
+/obj/machinery/door/firedoor/border_only/update_nearby_tiles(need_rebuild)
+
+	var/turf/simulated/source = get_turf(src)
+	var/turf/simulated/destination = get_step(source,dir)
+
+	update_heat_protection(loc)
+
+	if(istype(source)) SSair.mark_for_update(source)
+	if(istype(destination)) SSair.mark_for_update(destination)
+	return 1
+*/
 /obj/machinery/door/firedoor/multi_tile
 	icon = 'icons/obj/doors/DoorHazard2x1.dmi'
 	width = 2

@@ -170,7 +170,7 @@ var/global/Holiday = null
 			else			Egg = new(F)
 */
 /*			var/list/obj/containers = list()
-			for(var/obj/item/weapon/storage/S in global.item_list)
+			for(var/obj/item/weapon/storage/S in world)
 				if(isNotStationLevel(S.z))	continue
 				containers += S
 

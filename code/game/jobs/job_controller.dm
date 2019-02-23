@@ -15,7 +15,8 @@ var/global/datum/controller/occupations/job_master
 	var/list/unassigned = list()
 		//Debug info
 	var/list/job_debug = list()
-
+		//Cache of icons for job info window
+	var/list/job_icons = list()
 
 	proc/SetupOccupations(var/setup_titles = 0)
 		occupations = list()
@@ -58,6 +59,11 @@ var/global/datum/controller/occupations/job_master
 			if(job.department_flag & MSC)
 				GLOB.nonhuman_positions |= job.title
 
+		if(!GLOB.skills.len)
+			decls_repository.get_decl(/decl/hierarchy/skill)
+		if(!GLOB.skills.len)
+			log_error("<span class='warning'>Error setting up job skill requirements, no skill datums found!</span>")
+			return 0
 		return 1
 
 
@@ -83,6 +89,51 @@ var/global/datum/controller/occupations/job_master
 	proc/GetPlayerAltTitle(mob/new_player/player, rank)
 		return player.client.prefs.GetPlayerAltTitle(GetJob(rank))
 
+	proc/CheckGeneralJoinBlockers(var/mob/new_player/joining, var/datum/job/job)
+		if(!istype(joining) || !joining.client || !joining.client.prefs)
+			return FALSE
+		if(!istype(job))
+			log_debug("Job assignment error for [joining] - job does not exist or is of the incorrect type.")
+			return FALSE
+		if(!job.is_position_available())
+			to_chat(joining, "<span class='warning'>Unfortunately, that job is no longer available.</span>")
+			return FALSE
+		if(!config.enter_allowed)
+			to_chat(joining, "<span class='warning'>There is an administrative lock on entering the game!</span>")
+			return FALSE
+		if(SSticker.mode && SSticker.mode.explosion_in_progress)
+			to_chat(joining, "<span class='warning'>The [station_name()] is currently exploding. Joining would go poorly.</span>")
+			return FALSE
+		return TRUE
+
+	proc/CheckLatejoinBlockers(var/mob/new_player/joining, var/datum/job/job)
+		if(!CheckGeneralJoinBlockers(joining, job))
+			return FALSE
+		if(job.minimum_character_age && (joining.client.prefs.age < job.minimum_character_age))
+			to_chat(joining, "<span class='warning'>Your character's in-game age is too low for this job.</span>")
+			return FALSE
+		if(!job.player_old_enough(joining.client))
+			to_chat(joining, "<span class='warning'>Your player age (days since first seen on the server) is too low for this job.</span>")
+			return FALSE
+		if(GAME_STATE != RUNLEVEL_GAME)
+			to_chat(joining, "<span class='warning'>The round is either not ready, or has already finished...</span>")
+			return FALSE
+		return TRUE
+
+	proc/CheckUnsafeSpawn(var/mob/living/spawner, var/turf/spawn_turf)
+		var/radlevel = SSradiation.get_rads_at_turf(spawn_turf)
+		var/airstatus = IsTurfAtmosUnsafe(spawn_turf)
+		if(airstatus || radlevel > 0)
+			var/reply = alert(spawner, "Warning. Your selected spawn location seems to have unfavorable conditions. \
+			You may die shortly after spawning. \
+			Spawn anyway? More information: [airstatus] Radiation: [radlevel] Bq", "Atmosphere warning", "Abort", "Spawn anyway")
+			if(reply == "Abort")
+				return FALSE
+			else
+				// Let the staff know, in case the person complains about dying due to this later. They've been warned.
+				log_and_message_admins("User [spawner] spawned at spawn point with dangerous atmosphere.")
+		return TRUE
+
 	proc/AssignRole(var/mob/new_player/player, var/rank, var/latejoin = 0)
 		Debug("Running AR, Player: [player], Rank: [rank], LJ: [latejoin]")
 		if(player && player.mind && rank)
@@ -105,6 +156,7 @@ var/global/datum/controller/occupations/job_master
 				Debug("Player: [player] is now Rank: [rank], JCP:[job.current_positions], JPL:[position_limit]")
 				player.mind.assigned_role = rank
 				player.mind.role_alt_title = GetPlayerAltTitle(player, rank)
+				player.mind.assigned_job = GetJob(rank)
 				unassigned -= player
 				job.current_positions++
 				return 1
@@ -113,10 +165,17 @@ var/global/datum/controller/occupations/job_master
 
 	proc/FreeRole(var/rank)	//making additional slot on the fly
 		var/datum/job/job = GetJob(rank)
-		if(job && job.current_positions >= job.total_positions && job.total_positions != -1)
-			job.total_positions++
+		if(job && !job.is_position_available())
+			job.make_position_available()
 			return 1
 		return 0
+
+	proc/ClearSlot(var/rank) // Removing one from the current filled counter
+		var/datum/job/job = GetJob(rank)
+		if (job && job.current_positions > 0)
+			job.current_positions -= 1
+			return TRUE
+		return FALSE
 
 	proc/FindOccupationCandidates(datum/job/job, level, flag)
 		Debug("Running FOC, Job: [job], Level: [level], Flag: [flag]")
@@ -238,13 +297,12 @@ var/global/datum/controller/occupations/job_master
  *  fills var "assigned_role" for all ready players.
  *  This proc must not have any side effect besides of modifying "assigned_role".
  **/
-	proc/DivideOccupations()
+	proc/DivideOccupations(datum/game_mode/mode)
 		//Setup new player list and get the jobs list
 		Debug("Running DO")
 		SetupOccupations()
 
-		//Holder for Triumvirate is stored in the ticker, this just processes it
-		if(ticker && ticker.triai)
+		if(GLOB.triai)
 			for(var/datum/job/A in occupations)
 				if(A.title == "AI")
 					A.spawn_positions = 3
@@ -289,7 +347,6 @@ var/global/datum/controller/occupations/job_master
 
 		// Loop through all levels from high to low
 		var/list/shuffledoccupations = shuffle(occupations)
-		// var/list/disabled_jobs = ticker.mode.disabled_jobs  // So we can use .Find down below without a colon.
 		for(var/level = 1 to 3)
 			//Check the head jobs first each level
 			CheckHeadPositions(level)
@@ -299,7 +356,7 @@ var/global/datum/controller/occupations/job_master
 
 				// Loop through all jobs
 				for(var/datum/job/job in shuffledoccupations) // SHUFFLE ME BABY
-					if(!job || ticker.mode.disabled_jobs.Find(job.title) )
+					if(!job || mode.disabled_jobs.Find(job.title) )
 						continue
 
 					if(jobban_isbanned(player, job.title))
@@ -344,73 +401,95 @@ var/global/datum/controller/occupations/job_master
 		for(var/mob/new_player/player in unassigned)
 			if(player.client.prefs.alternate_option == RETURN_TO_LOBBY)
 				player.ready = 0
-				player.new_player_panel_proc()
+				player.new_player_panel()
 				unassigned -= player
 		return 1
 
+	proc/EquipCustomLoadout(var/mob/living/carbon/human/H, var/datum/job/job)
+
+		if(!H || !H.client)
+			return
+
+		// Equip custom gear loadout, replacing any job items
+		var/list/spawn_in_storage = list()
+		var/list/loadout_taken_slots = list()
+		if(H.client.prefs.Gear() && job.loadout_allowed)
+			for(var/thing in H.client.prefs.Gear())
+				var/datum/gear/G = gear_datums[thing]
+				if(G)
+					var/permitted = 0
+					if(G.allowed_branches)
+						if(H.char_branch && H.char_branch.type in G.allowed_branches)
+							permitted = 1
+					else
+						permitted = 1
+
+					if(permitted)
+						if(G.allowed_roles)
+							if(job.type in G.allowed_roles)
+								permitted = 1
+							else
+								permitted = 0
+						else
+							permitted = 1
+
+					if(G.whitelisted && (!(H.species.name in G.whitelisted)))
+						permitted = 0
+
+					if(!permitted)
+						to_chat(H, "<span class='warning'>Your current species, job, branch or whitelist status does not permit you to spawn with [thing]!</span>")
+						continue
+
+					if(!G.slot || G.slot == slot_tie || (G.slot in loadout_taken_slots) || !G.spawn_on_mob(H, H.client.prefs.Gear()[G.display_name]))
+						spawn_in_storage.Add(G)
+					else
+						loadout_taken_slots.Add(G.slot)
+
+		// do accessories last so they don't attach to a suit that will be replaced
+		if(H.char_rank && H.char_rank.accessory)
+			for(var/accessory_path in H.char_rank.accessory)
+				var/list/accessory_data = H.char_rank.accessory[accessory_path]
+				if(islist(accessory_data))
+					var/amt = accessory_data[1]
+					var/list/accessory_args = accessory_data.Copy()
+					accessory_args[1] = src
+					for(var/i in 1 to amt)
+						H.equip_to_slot_or_del(new accessory_path(arglist(accessory_args)), slot_tie)
+				else
+					for(var/i in 1 to (isnull(accessory_data)? 1 : accessory_data))
+						H.equip_to_slot_or_del(new accessory_path(src), slot_tie)
+
+		return spawn_in_storage
 
 	proc/EquipRank(var/mob/living/carbon/human/H, var/rank, var/joined_late = 0)
 		if(!H)	return null
 
 		var/datum/job/job = GetJob(rank)
-		var/list/spawn_in_storage = list()
+		var/list/spawn_in_storage
 
 		if(job)
 
+			// Transfers the skill settings for the job to the mob
+			H.skillset.obtain_from_client(job, H.client)
+
 			//Equip job items.
-			if(job.has_account)
-				job.setup_account(H)
+			job.setup_account(H)
+
+			// EMAIL GENERATION
+			if(rank != "Robot" && rank != "AI")		//These guys get their emails later.
+				var/domain
+				var/desired_name
+				if(H.char_branch && H.char_branch.email_domain)
+					domain = H.char_branch.email_domain
+				else
+					domain = "freemail.net"
+				desired_name = H.real_name
+				ntnet_global.create_email(H, desired_name, domain)
+			// END EMAIL GENERATION
+
 			job.equip(H, H.mind ? H.mind.role_alt_title : "", H.char_branch, H.char_rank)
 			job.apply_fingerprints(H)
-
-			// Equip custom gear loadout, replacing any job items
-			var/list/loadout_taken_slots = list()
-			if(H.client.prefs.Gear() && job.loadout_allowed)
-				for(var/thing in H.client.prefs.Gear())
-					var/datum/gear/G = gear_datums[thing]
-					if(G)
-						var/permitted
-						if(G.allowed_roles)
-							for(var/job_type in G.allowed_roles)
-								if(job.type == job_type)
-									permitted = 1
-						else
-							permitted = 1
-
-						if(G.whitelisted && (!(H.species.name in G.whitelisted)))
-							permitted = 0
-
-						if(!permitted)
-							to_chat(H, "<span class='warning'>Your current species, job or whitelist status does not permit you to spawn with [thing]!</span>")
-							continue
-
-						if(!G.slot || G.slot == slot_tie || (G.slot in loadout_taken_slots) || !G.spawn_on_mob(H, H.client.prefs.Gear()[G.display_name]))
-							spawn_in_storage.Add(G)
-						else
-							loadout_taken_slots.Add(G.slot)
-
-			// do accessories last so they don't attach to a suit that will be replaced
-			if(H.char_rank && H.char_rank.accessory)
-				for(var/accessory_path in H.char_rank.accessory)
-					var/list/accessory_data = H.char_rank.accessory[accessory_path]
-					if(islist(accessory_data))
-						var/amt = accessory_data[1]
-						var/list/accessory_args = accessory_data.Copy()
-						accessory_args[1] = src
-						for(var/i in 1 to amt)
-							H.equip_to_slot_or_del(new accessory_path(arglist(accessory_args)), slot_tie)
-					else
-						for(var/i in 1 to (isnull(accessory_data)? 1 : accessory_data))
-							H.equip_to_slot_or_del(new accessory_path(src), slot_tie)
-
-			// override to make sure people don't spawn with backpacks unless their outfit allows it - Kachnov
-			var/decl/hierarchy/outfit/override = job.get_outfit(H, H.mind ? H.mind.role_alt_title : "", H.char_branch, H.char_rank)
-			if (!override.back && H.back)
-				var/obj/item/deleted = H.back
-				if (H.remove_from_mob(deleted))
-					qdel(deleted)
-
-
+			spawn_in_storage = EquipCustomLoadout(H, job)
 		else
 			to_chat(H, "Your job is [rank] and the game just can't handle it! Please report this bug to an administrator.")
 
@@ -423,13 +502,15 @@ var/global/datum/controller/occupations/job_master
 				H.forceMove(S.loc)
 			else
 				var/datum/spawnpoint/spawnpoint = get_spawnpoint_for(H.client, rank)
-				if (spawnpoint.turfs.len)
-					H.forceMove(pick(spawnpoint.turfs))
+				H.forceMove(pick(spawnpoint.turfs))
+				H.handlecryo()
 
 			// Moving wheelchair if they have one
 			if(H.buckled && istype(H.buckled, /obj/structure/bed/chair/wheelchair))
 				H.buckled.forceMove(H.loc)
 				H.buckled.set_dir(H.dir)
+		else
+			H.handlecryo()
 
 		// If they're head, give them the account info for their department
 		if(H.mind && job.head_position)
@@ -449,17 +530,17 @@ var/global/datum/controller/occupations/job_master
 			alt_title = H.mind.role_alt_title
 
 			switch(rank)
-				if("Cyborg")
+				if("Robot")
 					return H.Robotize()
 				if("AI")
 					return H
 				if("Captain")
-					var/sound/announce_sound = (ticker.current_state <= GAME_STATE_SETTING_UP)? null : sound('sound/misc/boatswain.ogg', volume=20)
+					var/sound/announce_sound = (GAME_STATE <= RUNLEVEL_SETUP)? null : sound('sound/misc/boatswain.ogg', volume=20)
 					captain_announcement.Announce("All hands, Captain [H.real_name] on deck!", new_sound=announce_sound)
 
-		// put any loadout items that couldn't spawn into storage or on the ground
-		for(var/datum/gear/G in spawn_in_storage)
-			G.spawn_in_storage_or_drop(H, H.client.prefs.Gear()[G.display_name])
+		if(spawn_in_storage)
+			for(var/datum/gear/G in spawn_in_storage)
+				G.spawn_in_storage_or_drop(H, H.client.prefs.Gear()[G.display_name])
 
 		if(istype(H)) //give humans wheelchairs, if they need them.
 			var/obj/item/organ/external/l_foot = H.get_organ(BP_L_FOOT)
@@ -467,15 +548,12 @@ var/global/datum/controller/occupations/job_master
 			if(!l_foot || !r_foot)
 				var/obj/structure/bed/chair/wheelchair/W = new /obj/structure/bed/chair/wheelchair(H.loc)
 				H.buckled = W
-				H.update_canmove()
+				H.UpdateLyingBuckledAndVerbStatus()
 				W.set_dir(H.dir)
 				W.buckled_mob = H
 				W.add_fingerprint(H)
 
-		to_chat(H, "<b>You are [job.total_positions == 1 ? "the" : "a"] [alt_title ? alt_title : rank].</b>")
-
-		if(job.duties != "")
-			to_chat(H, "<span class = 'notice'>[job.duties]</span>")
+		to_chat(H, "<B>You are [job.total_positions == 1 ? "the" : "a"] [alt_title ? alt_title : rank].</B>")
 
 		if(job.supervisors)
 			to_chat(H, "<b>As the [alt_title ? alt_title : rank] you answer directly to [job.supervisors]. Special circumstances may change this.</b>")
@@ -484,34 +562,6 @@ var/global/datum/controller/occupations/job_master
 
 		if(job.req_admin_notify)
 			to_chat(H, "<b>You are playing a job that is important for Game Progression. If you have to disconnect, please notify the admins via adminhelp.</b>")
-
-
-		if(job.has_email)//Don't generate an email if they don't have one.
-			// EMAIL GENERATION
-			var/domain
-			if(H.char_branch && H.char_branch.email_domain)
-				domain = H.char_branch.email_domain
-			else
-				domain = "foundation.ds90"
-			var/sanitized_name = sanitize(replacetext(replacetext(lowertext(H.real_name), " ", "."), "'", ""))
-			var/complete_login = "[sanitized_name]@[domain]"
-
-			// It is VERY unlikely that we'll have two players, in the same round, with the same name and branch, but still, this is here.
-			// If such conflict is encountered, a random number will be appended to the email address. If this fails too, no email account will be created.
-			if(ntnet_global.does_email_exist(complete_login))
-				complete_login = "[sanitized_name][random_id(/datum/computer_file/data/email_account/, 100, 999)]@[domain]"
-
-			// If even fallback login generation failed, just don't give them an email. The chance of this happening is astronomically low.
-			if(ntnet_global.does_email_exist(complete_login))
-				to_chat(H, "You were not assigned an email address.")
-				H.mind.store_memory("You were not assigned an email address.")
-			else
-				var/datum/computer_file/data/email_account/EA = new/datum/computer_file/data/email_account()
-				EA.password = GenerateKey()
-				EA.login = 	complete_login
-				to_chat(H, "Your email account address is <b>[EA.login]</b> and the password is <b>[EA.password]</b>. This information has also been placed into your notes.")
-				H.mind.store_memory("Your email account address is [EA.login] and the password is [EA.password].")
-			// END EMAIL GENERATION
 
 		//Gives glasses to the vision impaired
 		if(H.disabilities & NEARSIGHTED)
@@ -554,7 +604,7 @@ var/global/datum/controller/occupations/job_master
 				if(!J)	continue
 				J.total_positions = text2num(value)
 				J.spawn_positions = text2num(value)
-				if(name == "AI" || name == "Cyborg")//I dont like this here but it will do for now
+				if(name == "AI" || name == "Robot")//I dont like this here but it will do for now
 					J.total_positions = 0
 
 		return 1
@@ -643,7 +693,7 @@ var/global/datum/controller/occupations/job_master
 
 /datum/controller/occupations/proc/get_roundstart_spawnpoint(var/rank)
 	var/list/loc_list = list()
-	for(var/obj/effect/landmark/start/sloc in global.landmark_list)
+	for(var/obj/effect/landmark/start/sloc in landmarks_list)
 		if(sloc.name != rank)	continue
 		if(locate(/mob/living) in sloc.loc)	continue
 		loc_list += sloc

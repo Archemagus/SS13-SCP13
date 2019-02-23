@@ -5,7 +5,7 @@ obj/structure/closet/crate
 	icon_state = "crate"
 	icon_opened = "crateopen"
 	icon_closed = "crate"
-	atom_flags = ATOM_FLAG_CLIMBABLE
+	atom_flags = ATOM_FLAG_NO_TEMP_CHANGE | ATOM_FLAG_CLIMBABLE
 	setup = 0
 
 	storage_types = CLOSET_STORAGE_ITEMS
@@ -35,10 +35,10 @@ obj/structure/closet/crate
 			devices += A
 		to_chat(user,"There are some wires attached to the lid, connected to [english_list(devices)].")
 
-/obj/structure/closet/crate/attackby(obj/item/weapon/W as obj, mob/user as mob)
+/obj/structure/closet/crate/attackby(obj/item/W as obj, mob/user as mob)
 	if(opened)
 		return ..()
-	else if(istype(W, /obj/item/weapon/packageWrap))
+	else if(istype(W, /obj/item/stack/package_wrap))
 		return
 	else if(istype(W, /obj/item/stack/cable_coil))
 		var/obj/item/stack/cable_coil/C = W
@@ -51,9 +51,9 @@ obj/structure/closet/crate
 			return
 	else if(istype(W, /obj/item/device/assembly_holder) || istype(W, /obj/item/device/assembly))
 		if(rigged)
+			if(!user.unEquip(W, src))
+				return
 			to_chat(user, "<span class='notice'>You attach [W] to [src].</span>")
-			user.drop_item()
-			W.forceMove(src)
 			return
 	else if(isWirecutter(W))
 		if(rigged)
@@ -82,7 +82,7 @@ obj/structure/closet/crate
 	. = ..()
 	update_icon()
 
-/obj/structure/closet/crate/secure/update_icon()
+/obj/structure/closet/crate/secure/on_update_icon()
 	..()
 	if(broken)
 		overlays += emag
@@ -90,36 +90,6 @@ obj/structure/closet/crate
 		overlays += redlight
 	else
 		overlays += greenlight
-
-/obj/structure/closet/crate/securecryo
-	desc = "A secure crate."
-	name = "Secure crate"
-	icon_state = "securecrate"
-	icon_opened = "securecrateopen"
-	icon_closed = "securecrate"
-	var/redlight = "securecrater"
-	var/greenlight = "securecrateg"
-	var/sparks = "securecratesparks"
-	var/emag = "securecrateemag"
-
-	setup = CLOSET_HAS_LOCK
-	locked = TRUE
-
-/obj/structure/closet/crate/securecryo/Initialize()
-	. = ..()
-	update_icon()
-
-/obj/structure/closet/crate/securecryo/update_icon()
-	..()
-	if(broken)
-		overlays += emag
-	else if(locked)
-		overlays += redlight
-	else
-		overlays += greenlight
-
-	storage_capacity = 999 * MOB_LARGE
-	storage_types = CLOSET_STORAGE_ITEMS|CLOSET_STORAGE_STRUCTURES
 
 /obj/structure/closet/crate/plastic
 	name = "plastic crate"
@@ -193,29 +163,57 @@ obj/structure/closet/crate
 	icon_state = "freezer"
 	icon_opened = "freezeropen"
 	icon_closed = "freezer"
+	temperature = -16 CELCIUS
+
 	var/target_temp = T0C - 40
 	var/cooling_power = 40
 
-	return_air()
-		var/datum/gas_mixture/gas = (..())
-		if(!gas)	return null
-		var/datum/gas_mixture/newgas = new/datum/gas_mixture()
-		newgas.copy_from(gas)
-		if(newgas.temperature <= target_temp)	return
+/obj/structure/closet/crate/freezer/return_air()
+	var/datum/gas_mixture/gas = (..())
+	if(!gas)	return null
+	var/datum/gas_mixture/newgas = new/datum/gas_mixture()
+	newgas.copy_from(gas)
+	if(newgas.temperature <= target_temp)	return
 
-		if((newgas.temperature - cooling_power) > target_temp)
-			newgas.temperature -= cooling_power
-		else
-			newgas.temperature = target_temp
-		return newgas
+	if((newgas.temperature - cooling_power) > target_temp)
+		newgas.temperature -= cooling_power
+	else
+		newgas.temperature = target_temp
+	return newgas
+
+/obj/structure/closet/crate/freezer/ProcessAtomTemperature()
+	return PROCESS_KILL
 
 /obj/structure/closet/crate/freezer/rations //Fpr use in the escape shuttle
 	name = "emergency rations"
 	desc = "A crate of emergency rations."
 
-
 /obj/structure/closet/crate/freezer/rations/WillContain()
-	return list(/obj/item/weapon/reagent_containers/food/snacks/liquidfood = 4)
+	return list(/obj/item/weapon/reagent_containers/food/snacks/liquidfood = 15, /obj/item/weapon/reagent_containers/food/drinks/cans/waterbottle = 15, /obj/random/mre = 6)
+
+/obj/structure/closet/crate/freezer/blood
+	name = "blood freezer"
+	desc = "A crate of O-minus blood packs. Don't drink it, please."
+
+/obj/structure/closet/crate/freezer/blood/WillContain()
+	return list(/obj/item/weapon/reagent_containers/ivbag/blood/OMinus = 4)
+
+/obj/structure/closet/crate/freezer/blood/small
+	name = "blood freezer"
+	desc = "A crate of O-minus blood packs. Don't drink it, please."
+
+/obj/structure/closet/crate/freezer/blood/small/WillContain()
+	return list(/obj/item/weapon/reagent_containers/ivbag/blood/OMinus = 2)
+
+/obj/structure/closet/crate/freezer/nanoblood
+	name = "nanoblood freezer"
+	desc = "A crate of nanoblood packs. Don't drink it."
+
+/obj/structure/closet/crate/freezer/nanoblood/WillContain()
+	return list(/obj/item/weapon/reagent_containers/ivbag/nanoblood = 4)
+
+/obj/structure/closet/crate/freezer/nanoblood/small/WillContain()
+	return list(/obj/item/weapon/reagent_containers/ivbag/nanoblood = 2)
 
 /obj/structure/closet/crate/bin
 	name = "large bin"
@@ -347,10 +345,18 @@ obj/structure/closet/crate
 	open_sound = 'sound/items/Deconstruct.ogg'
 	close_sound = 'sound/items/Deconstruct.ogg'
 	req_access = list(access_xenobiology)
-	storage_types = CLOSET_STORAGE_ITEMS|CLOSET_STORAGE_MOBS
+
+	storage_capacity = 2 * MOB_LARGE
+	storage_types = CLOSET_STORAGE_ITEMS|CLOSET_STORAGE_MOBS|CLOSET_STORAGE_STRUCTURES
 
 /obj/structure/closet/crate/secure/biohazard/blanks/WillContain()
-	return list(/mob/living/carbon/human/blank, /obj/item/usedcryobag)
+	return list(/obj/structure/closet/body_bag/cryobag/blank)
+
+/obj/structure/closet/crate/secure/biohazard/blanks/can_close()
+	for(var/obj/structure/closet/closet in get_turf(src))
+		if(closet != src && !(istype(closet, /obj/structure/closet/body_bag/cryobag)))
+			return 0
+	return 1
 
 /obj/structure/closet/crate/paper_refill
 	name = "paper refill crate"

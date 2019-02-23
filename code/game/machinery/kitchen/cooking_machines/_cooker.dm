@@ -41,6 +41,7 @@
 		to_chat(usr, "You can see \a [cooking_obj] inside.")
 
 /obj/machinery/cooker/attackby(var/obj/item/I, var/mob/user)
+	set waitfor = 0  //So that any remaining parts of calling proc don't have to wait for the long cooking time ahead.
 
 	if(!cook_type || (stat & (NOPOWER|BROKEN)))
 		to_chat(user, "<span class='warning'>\The [src] is not working.</span>")
@@ -100,12 +101,14 @@
 	sleep(cook_time)
 
 	// Sanity checks.
-	check_cooking_obj()
+	if(check_cooking_obj())
+		return // Cooking failed/was terminated.
 
 	// RIP slow-moving held mobs.
 	if(istype(cooking_obj, /obj/item/weapon/holder))
 		for(var/mob/living/M in cooking_obj.contents)
 			M.death()
+			qdel(M)
 
 	// Cook the food.
 	var/cook_path
@@ -115,7 +118,7 @@
 		cook_path = /obj/item/weapon/reagent_containers/food/snacks/variable
 	var/obj/item/weapon/reagent_containers/food/snacks/result = new cook_path(src) //Holy typepaths, Batman.
 
-	if(cooking_obj && cooking_obj.reagents && cooking_obj.reagents.total_volume)
+	if(cooking_obj.reagents && cooking_obj.reagents.total_volume)
 		cooking_obj.reagents.trans_to(result, cooking_obj.reagents.total_volume)
 
 	// Set icon and appearance.
@@ -141,7 +144,7 @@
 	if(!can_burn_food)
 		icon_state = off_icon
 		cooking = 0
-		result.forceMove(get_turf(src))
+		result.dropInto(loc)
 		cooking_obj = null
 	else
 		var/failed
@@ -173,7 +176,7 @@
 		cooking_obj = null
 		icon_state = off_icon
 		cooking = 0
-		return
+		return TRUE
 
 /obj/machinery/cooker/attack_hand(var/mob/user)
 

@@ -1,6 +1,6 @@
 /obj/structure/bed/chair/wheelchair
 	name = "wheelchair"
-	desc = "You sit in this. Either by will or force."
+	desc = "Now we're getting somewhere."
 	icon_state = "wheelchair"
 	anchored = 0
 	buckle_movable = 1
@@ -9,12 +9,14 @@
 	var/mob/living/pulling = null
 	var/bloodiness
 
-/obj/structure/bed/chair/wheelchair/update_icon()
+	movement_handlers = list(/datum/movement_handler/delay = list(6), /datum/movement_handler/move_relay_self)
+
+/obj/structure/bed/chair/wheelchair/on_update_icon()
 	return
 
 /obj/structure/bed/chair/wheelchair/set_dir()
 	..()
-	overlays = null
+	overlays.Cut()
 	var/image/O = image(icon = 'icons/obj/furniture.dmi', icon_state = "w_overlay", dir = src.dir)
 	O.plane = ABOVE_HUMAN_PLANE
 	O.layer = ABOVE_HUMAN_LAYER
@@ -89,13 +91,10 @@
 	driving = 0
 
 /obj/structure/bed/chair/wheelchair/Move()
-	..()
+	. = ..()
 	if(buckled_mob)
 		var/mob/living/occupant = buckled_mob
 		if(!driving)
-			occupant.buckled = null
-			occupant.Move(src.loc)
-			occupant.buckled = src
 			if (occupant && (src.loc != occupant.loc))
 				if (propelled)
 					for (var/mob/O in src.loc)
@@ -147,11 +146,11 @@
 		if (pulling && (pulling.a_intent == I_HURT))
 			occupant.throw_at(A, 3, 3, pulling)
 		else if (propelled)
-			occupant.throw_at(A, 3, propelled)
+			occupant.throw_at(A, 3, 3, propelled)
 
 		var/def_zone = ran_zone()
 		var/blocked = occupant.run_armor_check(def_zone, "melee")
-		occupant.throw_at(A, 3, propelled)
+		occupant.throw_at(A, 3, 3, propelled)
 		occupant.apply_effect(6, STUN, blocked)
 		occupant.apply_effect(6, WEAKEN, blocked)
 		occupant.apply_effect(6, STUTTER, blocked)
@@ -190,3 +189,48 @@
 		pulling = null
 		usr.pulledby = null
 	..()
+
+/proc/equip_wheelchair(mob/living/carbon/human/H) //Proc for spawning in a wheelchair if a new character has no legs. Used in new_player.dm
+	var/obj/structure/bed/chair/wheelchair/W = new(H.loc)
+	W.buckle_mob(H)
+
+/obj/structure/bed/chair/wheelchair/verb/collapse()
+	set src in oview(1)
+	set name = "Collapse Wheelchair"
+	set category = "Object"
+
+	if(!CanPhysicallyInteract(usr))
+		return
+
+	if(!ishuman(usr))
+		return
+
+	if(usr.incapacitated())
+		return
+
+	if(buckled_mob)
+		to_chat(usr, "<span class='warning'>You can't collapse \the [src.name] while it still on use.</span>")
+		return
+
+	visible_message("[usr] starts collapse \the [src.name].")
+	if(do_after(usr, 40, src))
+		var/obj/item/wheelchair_kit/K = new /obj/item/wheelchair_kit(get_turf(usr))
+		visible_message("<span class='notice'>[usr] collapses \the [src.name].</span>")
+		K.add_fingerprint(usr)
+		qdel(src)
+
+/obj/item/wheelchair_kit
+	name = "compressed wheelchair kit"
+	desc = "Collapsed parts, prepared to immediately spring into the shape of a wheelchair."
+	icon = 'icons/obj/items_inf.dmi'
+	icon_state = "wheelchair-item"
+	item_state = "rbed"
+	w_class = ITEM_SIZE_LARGE
+
+/obj/item/wheelchair_kit/attack_self(mob/user)
+	visible_message("[user] starts lay out \the [src.name].")
+	if(do_after(user, 40, src))
+		var/obj/structure/bed/chair/wheelchair/W = new /obj/structure/bed/chair/wheelchair(get_turf(user))
+		visible_message("<span class='notice'>[user] lay out \the [W.name].</span>")
+		W.add_fingerprint(user)
+		qdel(src)

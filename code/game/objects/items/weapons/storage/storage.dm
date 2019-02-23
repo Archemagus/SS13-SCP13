@@ -11,6 +11,7 @@
 	w_class = ITEM_SIZE_NORMAL
 	var/list/can_hold = new/list() //List of objects which this item can store (if set, it can't store anything else)
 	var/list/cant_hold = new/list() //List of objects which this item can't store (in effect only if can_hold isn't set)
+	var/list/can_gather = new/list() //List of objects which this item can gather by clicking on turf
 
 	var/max_w_class = ITEM_SIZE_SMALL //Max size of objects that this object can store (in effect only if can_hold isn't set)
 	var/max_storage_space = null //Total storage cost of items this can hold. Will be autoset based on storage_slots if left null.
@@ -26,6 +27,8 @@
 	//the assoc value can either be the quantity, or a list whose first value is the quantity and the rest are args.
 	var/list/startswith
 	var/datum/storage_ui/storage_ui = /datum/storage_ui/default
+	var/opened = null
+	var/open_sound = null
 
 /obj/item/weapon/storage/Destroy()
 	QDEL_NULL(storage_ui)
@@ -35,16 +38,13 @@
 	if(!canremove)
 		return
 
-	if (ishuman(usr) || issmall(usr)) //so monkeys can take off their backpacks -- Urist
+	if ((ishuman(usr) || isrobot(usr) || issmall(usr)) && !usr.incapacitated())
 		if(over_object == usr && Adjacent(usr)) // this must come before the screen objects only block
 			src.open(usr)
-			return
+			return TRUE
 
 		if (!( istype(over_object, /obj/screen) ))
 			return ..()
-
-		if (usr.incapacitated())
-			return
 
 		//makes sure that the storage is equipped, so that we can't drag it into our hand from miles away.
 		if (!usr.contains(src))
@@ -74,14 +74,24 @@
 	return L
 
 /obj/item/weapon/storage/proc/show_to(mob/user as mob)
-	storage_ui.show_to(user)
+	if(storage_ui)
+		storage_ui.show_to(user)
 
 /obj/item/weapon/storage/proc/hide_from(mob/user as mob)
-	storage_ui.hide_from(user)
+	if(storage_ui)
+		storage_ui.hide_from(user)
 
 /obj/item/weapon/storage/proc/open(mob/user as mob)
+	if(!opened)
+		playsound(src.loc, src.open_sound, 50, 0, -5)
+		opened = 1
+		queue_icon_update()
 	if (src.use_sound)
-		playsound(src.loc, src.use_sound, 50, 1, -5)
+		playsound(src.loc, src.use_sound, 50, 0, -5)
+	if (isrobot(user) && user.hud_used)
+		var/mob/living/silicon/robot/robot = user
+		if(robot.shown_robot_modules) //The robot's inventory is open, need to close it first.
+			robot.hud_used.toggle_show_robot_modules()
 
 	prepare_ui()
 	storage_ui.on_open(user)
@@ -92,10 +102,12 @@
 
 /obj/item/weapon/storage/proc/close(mob/user as mob)
 	hide_from(user)
-	storage_ui.after_close(user)
+	if(storage_ui)
+		storage_ui.after_close(user)
 
 /obj/item/weapon/storage/proc/close_all()
-	storage_ui.close_all()
+	if(storage_ui)
+		storage_ui.close_all()
 
 /obj/item/weapon/storage/proc/storage_space_used()
 	. = 0
@@ -163,6 +175,11 @@
 
 	return 1
 
+/obj/item/weapon/storage/proc/can_be_gathered(obj/item/W)
+	if(!can_gather || can_gather.len == 0 || is_type_in_list(W, can_gather))
+		return 1
+	return 0
+
 //This proc handles items being inserted. It does not perform any checks of whether an item can or can't be inserted. That's done by can_be_inserted()
 //The stop_warning parameter will stop the insertion message from being displayed. It is intended for cases where you are inserting multiple items at once,
 //such as when picking up all the items on a tile with one click.
@@ -171,7 +188,8 @@
 		return 0
 	if(istype(W.loc, /mob))
 		var/mob/M = W.loc
-		M.remove_from_mob(W)
+		if(!M.unEquip(W))
+			return
 	W.forceMove(src)
 	W.on_enter_storage(src)
 	if(usr)
@@ -181,10 +199,10 @@
 			for(var/mob/M in viewers(usr, null))
 				if (M == usr)
 					to_chat(usr, "<span class='notice'>You put \the [W] into [src].</span>")
-				else if (M in range(1)) //If someone is standing close enough, they can tell what it is... TODO replace with distance check
-					M.show_message("<span class='notice'>\The [usr] puts [W] into [src].</span>")
+				else if (M in range(1, src)) //If someone is standing close enough, they can tell what it is... TODO replace with distance check
+					M.show_message("<span class='notice'>\The [usr] puts [W] into [src].</span>", 1)
 				else if (W && W.w_class >= ITEM_SIZE_NORMAL) //Otherwise they can only see large or normal items from a distance...
-					M.show_message("<span class='notice'>\The [usr] puts [W] into [src].</span>")
+					M.show_message("<span class='notice'>\The [usr] puts [W] into [src].</span>", 1)
 
 		if(!NoUpdate)
 			update_ui_after_item_insertion()
@@ -193,18 +211,21 @@
 
 /obj/item/weapon/storage/proc/update_ui_after_item_insertion()
 	prepare_ui()
-	storage_ui.on_insertion(usr)
+	if(storage_ui)
+		storage_ui.on_insertion(usr)
 
 /obj/item/weapon/storage/proc/update_ui_after_item_removal()
 	prepare_ui()
-	storage_ui.on_post_remove(usr)
+	if(storage_ui)
+		storage_ui.on_post_remove(usr)
 
 //Call this proc to handle the removal of an item from the storage item. The item will be moved to the atom sent as new_target
 /obj/item/weapon/storage/proc/remove_from_storage(obj/item/W as obj, atom/new_location, var/NoUpdate = 0)
 	if(!istype(W)) return 0
 	new_location = new_location || get_turf(src)
 
-	storage_ui.on_pre_remove(usr, W)
+	if(storage_ui)
+		storage_ui.on_pre_remove(usr, W)
 
 	if(ismob(loc))
 		W.dropped(usr)
@@ -219,43 +240,32 @@
 	if(W.maptext)
 		W.maptext = ""
 	W.on_exit_storage(src)
-	update_icon()
+	if(!NoUpdate)
+		update_icon()
 	return 1
+
+// Only do ui functions for now; the obj is responsible for anything else.
+/obj/item/weapon/storage/proc/on_item_deletion(obj/item/W)
+	if(storage_ui)
+		storage_ui.on_pre_remove(null, W) // Supposed to be able to handle null user.
+		update_ui_after_item_removal()
+	queue_icon_update()
+
+//Run once after using remove_from_storage with NoUpdate = 1
+/obj/item/weapon/storage/proc/finish_bulk_removal()
+	update_ui_after_item_removal()
+	update_icon()
 
 //This proc is called when you want to place an item into the storage item.
 /obj/item/weapon/storage/attackby(obj/item/W as obj, mob/user as mob)
 	..()
 
-	if(isrobot(user))
-		return //Robots can't interact with storage items.
-
-	if(istype(W, /obj/item/device/lightreplacer))
-		var/obj/item/device/lightreplacer/LP = W
-		var/amt_inserted = 0
-		var/turf/T = get_turf(user)
-		for(var/obj/item/weapon/light/L in src.contents)
-			if(L.status == 0)
-				if(LP.uses < LP.max_uses)
-					LP.AddUses(1)
-					amt_inserted++
-					remove_from_storage(L, T)
-					qdel(L)
-		if(amt_inserted)
-			to_chat(user, "You inserted [amt_inserted] light\s into \the [LP.name]. You have [LP.uses] light\s remaining.")
-			return
+	if(isrobot(user) && (W == user.get_active_hand()))
+		return //Robots can't store their modules.
 
 	if(!can_be_inserted(W, user))
 		return
 
-	if(istype(W, /obj/item/weapon/tray))
-		var/obj/item/weapon/tray/T = W
-		if(T.calc_carry() > 0)
-			if(prob(85))
-				to_chat(user, "<span class='warning'>The tray won't fit in [src].</span>")
-				return
-			else
-				if(user.unEquip(W))
-					to_chat(user, "<span class='warning'>God damnit!</span>")
 	W.add_fingerprint(user)
 	return handle_item_insertion(W)
 
@@ -279,12 +289,15 @@
 	src.add_fingerprint(user)
 	return
 
+/obj/item/weapon/storage/attack_ghost(mob/user as mob)
+	show_to(user)
+
 /obj/item/weapon/storage/proc/gather_all(var/turf/T, var/mob/user)
 	var/success = 0
 	var/failure = 0
 
 	for(var/obj/item/I in T)
-		if(!can_be_inserted(I, user, 0))	// Note can_be_inserted still makes noise when the answer is no
+		if(!can_be_inserted(I, user, 0) || !can_be_gathered(I))	// Note can_be_inserted still makes noise when the answer is no
 			failure = 1
 			continue
 		success = 1
@@ -319,8 +332,9 @@
 	var/turf/T = get_turf(src)
 	hide_from(usr)
 	for(var/obj/item/I in contents)
-		remove_from_storage(I, T, 1)
-	update_ui_after_item_removal()
+		if (can_be_gathered(I))
+			remove_from_storage(I, T, 1)
+	finish_bulk_removal()
 
 /obj/item/weapon/storage/Initialize()
 	. = ..()
@@ -338,6 +352,10 @@
 		max_storage_space = storage_slots*base_storage_cost(max_w_class)
 
 	storage_ui = new storage_ui(src)
+
+	if (!can_gather || !can_gather.len)
+		can_gather = can_hold
+
 	prepare_ui()
 
 	if(startswith)

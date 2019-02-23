@@ -34,7 +34,7 @@ AI MODULES
 			to_chat(usr, "You haven't selected an AI to transmit laws to!")
 			return
 
-		if(ticker && ticker.mode && ticker.mode.name == "blob")
+		if(SSticker.mode && SSticker.mode.name == "blob")
 			to_chat(usr, "Law uploads have been disabled by [GLOB.using_map.company_name]!")
 			return
 
@@ -141,13 +141,13 @@ AI MODULES
 	return ..()
 
 /obj/item/weapon/aiModule/oneHuman/addAdditionalLaws(var/mob/living/silicon/ai/target, var/mob/sender)
-	var/law = "Only [targetName] is an crew member."
+	var/law = "Only [targetName] is a crew member."
 	if (!target.is_malf_or_traitor()) // Makes sure the AI isn't a traitor before changing their law 0. --NeoFite
 		to_chat(target, law)
 		target.set_zeroth_law(law)
 		GLOB.lawchanges.Add("The law specified [targetName]")
 	else
-		GLOB.lawchanges.Add("The law specified [targetName], but the AI's existing law 0 cannot be overriden.")
+		GLOB.lawchanges.Add("The law specified [targetName], but the AI's existing law zero cannot be overriden.")
 
 /******************** ProtectStation ********************/
 
@@ -285,8 +285,8 @@ AI MODULES
 /******************** NanoTrasen ********************/
 
 /obj/item/weapon/aiModule/nanotrasen // -- TLE
-	name = "'NT Default' Core AI Module"
-	desc = "An 'NT Default' Core AI Module: 'Reconfigures the AI's core laws.'."
+	name = "'Corporate Default' Core AI Module"
+	desc = "A 'Corporate Default' Core AI Module: 'Reconfigures the AI's core laws.'."
 	origin_tech = list(TECH_DATA = 3, TECH_MATERIAL = 4)
 	laws = new/datum/ai_laws/nanotrasen
 
@@ -409,3 +409,11 @@ obj/item/weapon/aiModule/solgov_aggressive
 	desc = "An 'Antimov' Core AI Module: 'Reconfigures the AI's core laws.'."
 	origin_tech = list(TECH_DATA = 4)
 	laws = new/datum/ai_laws/antimov()
+
+/******************** DAIS ********************/
+
+/obj/item/weapon/aiModule/dais
+	name = "\improper 'DAIS Experimental' core AI module"
+	desc = "A 'DAIS Experimental' Core AI Module: 'Reconfigures the AI's core laws.'."
+	origin_tech = list(TECH_DATA = 4)
+	laws = new/datum/ai_laws/dais()

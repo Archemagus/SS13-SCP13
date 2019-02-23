@@ -86,8 +86,8 @@
 	new /obj/item/clothing/suit/holidaypriest(src)
 	new /obj/item/clothing/under/wedding/bride_white(src)
 	new /obj/item/weapon/storage/backpack/cultpack (src)
-	new /obj/item/weapon/storage/fancy/candle_box(src)
-	new /obj/item/weapon/storage/fancy/candle_box(src)
+	new /obj/item/weapon/storage/candle_box(src)
+	new /obj/item/weapon/storage/candle_box(src)
 	new /obj/item/weapon/deck/tarot(src)
 	return
 
@@ -119,6 +119,8 @@
 	new /obj/item/clothing/shoes/sandal(src)
 	new /obj/item/clothing/shoes/sandal(src)
 	new /obj/item/clothing/shoes/sandal(src)
+	new /obj/item/clothing/under/resomi(src)
+	new /obj/item/clothing/under/resomi/white(src)
 	return
 
 
@@ -144,8 +146,8 @@
 
 /obj/structure/closet/wardrobe/yellow
 	name = "yellow wardrobe"
-	icon_state = "wardrobe-y"
-	icon_closed = "wardrobe-y"
+	icon_state = "yellow"
+	icon_closed = "yellow"
 
 /obj/structure/closet/wardrobe/yellow/New()
 	..()
@@ -194,6 +196,9 @@
 	new /obj/item/clothing/shoes/workboots(src)
 	new /obj/item/clothing/shoes/workboots(src)
 	new /obj/item/clothing/shoes/workboots(src)
+	new /obj/item/clothing/shoes/workboots/alt(src)
+	new /obj/item/clothing/shoes/workboots/alt(src)
+	new /obj/item/clothing/shoes/workboots/alt(src)
 	new /obj/item/clothing/head/hardhat(src)
 	new /obj/item/clothing/head/hardhat(src)
 	new /obj/item/clothing/head/hardhat(src)
@@ -267,6 +272,8 @@
 	new /obj/item/clothing/under/rank/roboticist(src)
 	new /obj/item/clothing/suit/storage/toggle/labcoat(src)
 	new /obj/item/clothing/suit/storage/toggle/labcoat(src)
+	new /obj/item/clothing/suit/sc_labcoat(src)
+	new /obj/item/clothing/suit/sc_labcoat(src)
 	new /obj/item/clothing/shoes/black(src)
 	new /obj/item/clothing/shoes/black(src)
 	new /obj/item/clothing/gloves/thick(src)
@@ -407,7 +414,7 @@
 	new /obj/item/clothing/head/helmet/tactical(src)
 	new /obj/item/clothing/mask/balaclava/tactical(src)
 	new /obj/item/clothing/glasses/tacgoggles(src)
-	new /obj/item/weapon/storage/belt/security/tactical(src)
+	new /obj/item/weapon/storage/belt/holster/security/tactical(src)
 	new /obj/item/clothing/shoes/tactical(src)
 	new /obj/item/clothing/gloves/tactical(src)
 	return
@@ -461,3 +468,9 @@
 	new /obj/item/weapon/storage/briefcase(src)
 	new /obj/item/weapon/storage/briefcase(src)
 	return
+
+/obj/structure/closet/wardrobe/empty
+	name = "surgery closet"
+	desc = "For the patient's clothes."
+	icon_state = "white"
+	icon_closed = "white"

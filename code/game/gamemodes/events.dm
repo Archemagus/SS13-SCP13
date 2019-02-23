@@ -41,7 +41,7 @@ var/hadevent    = 0
 //	sound_to(world, sound('sound/AI/aliens.ogg'))
 
 	var/list/vents = list()
-	for(var/obj/machinery/atmospherics/unary/vent_pump/temp_vent in SSmachines.all_machinery)
+	for(var/obj/machinery/atmospherics/unary/vent_pump/temp_vent in SSmachines.machinery)
 		if(!temp_vent.welded && temp_vent.network && temp_vent.loc.z in GLOB.using_map.station_levels)
 			if(temp_vent.network.normal_members.len > 50) // Stops Aliens getting stuck in small networks. See: Security, Virology
 				vents += temp_vent
@@ -67,7 +67,7 @@ var/hadevent    = 0
 /proc/high_radiation_event()
 
 /* // Haha, this is way too laggy. I'll keep the prison break though.
-	for(var/obj/machinery/light/L in SSmachines.all_machinery)
+	for(var/obj/machinery/light/L in world)
 		if(isNotStationLevel(L.z)) continue
 		L.flicker(50)
 
@@ -100,9 +100,9 @@ var/hadevent    = 0
 
 
 	var/list/area/areas = list()
-	for(var/area in GLOB.areas)
-		if(istype(area, /area/security/prison) || istype(area, /area/security/brig))
-			areas += area
+	for(var/area/A in world)
+		if(istype(A, /area/security/prison) || istype(A, /area/security/brig))
+			areas += A
 
 	if(areas && areas.len > 0)
 
@@ -132,11 +132,10 @@ var/hadevent    = 0
 		sleep(150)
 		command_announcement.Announce("Gr3y.T1d3 virus detected in [station_name()] imprisonment subroutines. Recommend AI involvement.", "Security Alert")
 	else
-		WRITE_LOG(world.log, "ERROR: Could not initate grey-tide. Unable find prison or brig area.")
+		world.log << "ERROR: Could not initate grey-tide. Unable find prison or brig area."
 
 /proc/carp_migration() // -- Darem
-	for(var/landmark in global.landmark_list)
-		var/obj/effect/landmark/C = landmark
+	for(var/obj/effect/landmark/C in landmarks_list)
 		if(C.name == "carpspawn")
 			new /mob/living/simple_animal/hostile/carp(C.loc)
 	//sleep(100)
@@ -145,14 +144,14 @@ var/hadevent    = 0
 
 /proc/lightsout(isEvent = 0, lightsoutAmount = 1,lightsoutRange = 25) //leave lightsoutAmount as 0 to break ALL lights
 	if(isEvent)
-		command_announcement.Announce("A thunderstorm has been detected in your area, please repair potential electronic overloads.","Electrical Storm Alert")
+		command_announcement.Announce("An Electrical storm has been detected in your area, please repair potential electronic overloads.","Electrical Storm Alert")
 
 	if(lightsoutAmount)
 		var/list/epicentreList = list()
 
 		for(var/i=1,i<=lightsoutAmount,i++)
 			var/list/possibleEpicentres = list()
-			for(var/obj/effect/landmark/newEpicentre in global.landmark_list)
+			for(var/obj/effect/landmark/newEpicentre in landmarks_list)
 				if(newEpicentre.name == "lightsout" && !(newEpicentre in epicentreList))
 					possibleEpicentres += newEpicentre
 			if(possibleEpicentres.len)
@@ -168,7 +167,7 @@ var/hadevent    = 0
 				apc.overload_lighting()
 
 	else
-		for(var/obj/machinery/power/apc/apc in SSmachines.all_machinery)
+		for(var/obj/machinery/power/apc/apc in SSmachines.machinery)
 			apc.overload_lighting()
 
 	return
@@ -279,7 +278,7 @@ Would like to add a law like "Law x is _______" where x = a number, and _____ is
 					M.add_ion_law("THE [uppertext(station_name())] IS [who2pref] [who2]")
 
 	if(botEmagChance)
-		for(var/mob/living/bot/bot in SSmachines.all_machinery)
+		for(var/mob/living/bot/bot in SSmachines.machinery)
 			if(prob(botEmagChance))
 				bot.emag_act(1)
 
@@ -296,7 +295,7 @@ Would like to add a law like "Law x is _______" where x = a number, and _____ is
 	spawn(0)
 		log_debug("Started processing APCs")
 
-		for (var/obj/machinery/power/apc/APC in SSmachines.all_machinery)
+		for (var/obj/machinery/power/apc/APC in world)
 			if(APC.z in station_levels)
 				APC.ion_act()
 				apcnum++
@@ -305,7 +304,7 @@ Would like to add a law like "Law x is _______" where x = a number, and _____ is
 	spawn(0)
 		log_debug("Started processing SMES")
 
-		for (var/obj/machinery/power/smes/SMES in SSmachines.all_machinery)
+		for (var/obj/machinery/power/smes/SMES in world)
 			if(SMES.z in station_levels)
 				SMES.ion_act()
 				smesnum++
@@ -314,7 +313,7 @@ Would like to add a law like "Law x is _______" where x = a number, and _____ is
 	spawn(0)
 		log_debug("Started processing AIRLOCKS")
 
-		for (var/obj/machinery/door/airlock/D in SSmachines.all_machinery)
+		for (var/obj/machinery/door/airlock/D in world)
 			if(D.z in station_levels)
 				//if(length(D.req_access) > 0 && !(12 in D.req_access)) //not counting general access and maintenance airlocks
 				airlocknum++
@@ -325,7 +324,7 @@ Would like to add a law like "Law x is _______" where x = a number, and _____ is
 	spawn(0)
 		log_debug("Started processing FIREDOORS")
 
-		for (var/obj/machinery/door/firedoor/D in SSmachines.all_machinery)
+		for (var/obj/machinery/door/firedoor/D in world)
 			if(D.z in station_levels)
 				firedoornum++;
 				spawn(0)

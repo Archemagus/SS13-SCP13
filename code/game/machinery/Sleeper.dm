@@ -3,6 +3,7 @@
 	desc = "A fancy bed with built-in injectors, a dialysis machine, and a limited health scanner."
 	icon = 'icons/obj/Cryogenic2.dmi'
 	icon_state = "sleeper_0"
+	var/base_icon = "sleeper"
 	density = 1
 	anchored = 1
 	clicksound = 'sound/machines/buttonbeep.ogg'
@@ -21,8 +22,36 @@
 
 /obj/machinery/sleeper/Initialize()
 	. = ..()
+	component_parts = list(
+		new /obj/item/weapon/circuitboard/sleeper(src),
+		new /obj/item/weapon/stock_parts/scanning_module(src),
+		new /obj/item/weapon/stock_parts/manipulator(src),
+		new /obj/item/weapon/stock_parts/manipulator(src),
+		new /obj/item/weapon/stock_parts/console_screen(src),
+		new /obj/item/weapon/reagent_containers/syringe(src),
+		new /obj/item/weapon/reagent_containers/syringe(src),
+		new /obj/item/weapon/reagent_containers/glass/beaker/large(src))
+	RefreshParts()
+
 	beaker = new /obj/item/weapon/reagent_containers/glass/beaker/large(src)
 	update_icon()
+
+/obj/machinery/sleeper/RefreshParts()
+	var/U = 0
+
+	for(var/obj/item/weapon/stock_parts/P in component_parts)
+		if(istype(P, /obj/item/weapon/stock_parts/manipulator))
+			U += P.rating
+		if(istype(P, /obj/item/weapon/stock_parts/scanning_module))
+			U += P.rating
+
+	switch(U)
+		if(0 to 5)
+			available_chemicals = list("Inaprovaline" = /datum/reagent/inaprovaline, "Soporific" = /datum/reagent/soporific, "Paracetamol" = /datum/reagent/paracetamol, "Dylovene" = /datum/reagent/dylovene, "Dexalin" = /datum/reagent/dexalin)
+		if(6 to 8)
+			available_chemicals = list("Inaprovaline" = /datum/reagent/inaprovaline, "Soporific" = /datum/reagent/soporific, "Tramadol" = /datum/reagent/tramadol, "Dylovene" = /datum/reagent/dylovene, "Hyronalin" = /datum/reagent/hyronalin, "Dexalin" = /datum/reagent/dexalin, "Kelotane" = /datum/reagent/kelotane)
+		else
+			available_chemicals = list("Inaprovaline" = /datum/reagent/inaprovaline, "Soporific" = /datum/reagent/soporific, "Tramadol" = /datum/reagent/tramadol, "Dylovene" = /datum/reagent/dylovene, "Arithrazine" = /datum/reagent/arithrazine, "Dexalin Plus" = /datum/reagent/dexalinp, "Dermaline" = /datum/reagent/dermaline, "Bicaridine" = /datum/reagent/bicaridine, "Alkysine" = /datum/reagent/alkysine)
 
 /obj/machinery/sleeper/Process()
 	if(stat & (NOPOWER|BROKEN))
@@ -50,8 +79,8 @@
 	if(iscarbon(occupant) && stasis > 1)
 		occupant.SetStasis(stasis)
 
-/obj/machinery/sleeper/update_icon()
-	icon_state = "sleeper_[occupant ? "1" : "0"]"
+/obj/machinery/sleeper/on_update_icon()
+	icon_state = "[base_icon]_[occupant ? "1" : "0"]"
 
 /obj/machinery/sleeper/attack_hand(var/mob/user)
 	if(..())
@@ -74,10 +103,10 @@
 	data["reagents"] = reagents.Copy()
 
 	if(occupant)
-		var/scan = medical_scan_results(occupant)
-		scan = replacetext(scan,"'notice'","'white'")
-		scan = replacetext(scan,"'warning'","'average'")
-		scan = replacetext(scan,"'danger'","'bad'")
+		var/scan = user.skill_check(SKILL_MEDICAL, SKILL_ADEPT) ? medical_scan_results(occupant) : "<span class='white'><b>Contains: \the [occupant]</b></span>"
+		scan = replacetext(scan,"'scan_notice'","'white'")
+		scan = replacetext(scan,"'scan_warning'","'average'")
+		scan = replacetext(scan,"'scan_danger'","'bad'")
 		data["occupant"] =scan
 	else
 		data["occupant"] = 0
@@ -88,8 +117,9 @@
 	data["filtering"] = filtering
 	data["pump"] = pump
 	data["stasis"] = stasis
+	data["skill_check"] = user.skill_check(SKILL_MEDICAL, SKILL_BASIC)
 
-	ui = GLOB.nanomanager.try_update_ui(user, src, ui_key, ui, data, force_open)
+	ui = SSnano.try_update_ui(user, src, ui_key, ui, data, force_open)
 	if(!ui)
 		ui = new(user, src, ui_key, "sleeper.tmpl", "Sleeper UI", 600, 600, state = state)
 		ui.set_initial_data(data)
@@ -100,8 +130,8 @@
 	if(user == occupant)
 		to_chat(usr, "<span class='warning'>You can't reach the controls from the inside.</span>")
 		return STATUS_CLOSE
-	return ..()
-	    
+	. = ..()
+
 /obj/machinery/sleeper/OnTopic(user, href_list)
 	if(href_list["eject"])
 		go_out()
@@ -132,12 +162,19 @@
 	return attack_hand(user)
 
 /obj/machinery/sleeper/attackby(var/obj/item/I, var/mob/user)
+	if(default_deconstruction_screwdriver(user, I))
+		updateUsrDialog()
+		return
+	if(default_deconstruction_crowbar(user, I))
+		return
+	if(default_part_replacement(user, I))
+		return
 	if(istype(I, /obj/item/weapon/reagent_containers/glass))
 		add_fingerprint(user)
 		if(!beaker)
+			if(!user.unEquip(I, src))
+				return
 			beaker = I
-			user.drop_item()
-			I.forceMove(src)
 			user.visible_message("<span class='notice'>\The [user] adds \a [I] to \the [src].</span>", "<span class='notice'>You add \a [I] to \the [src].</span>")
 		else
 			to_chat(user, "<span class='warning'>\The [src] has a beaker already.</span>")
@@ -145,7 +182,13 @@
 	else
 		..()
 
+/obj/machinery/sleeper/dismantle()
+	go_out()
+	..()
+
 /obj/machinery/sleeper/MouseDrop_T(var/mob/target, var/mob/user)
+	if(..()) //anti-ghost
+		return
 	if(!CanMouseDrop(target, user))
 		return
 	if(!istype(target))
@@ -218,12 +261,17 @@
 	if(occupant.client)
 		occupant.client.eye = occupant.client.mob
 		occupant.client.perspective = MOB_PERSPECTIVE
-	occupant.dropInto(loc)
+	if(occupant.loc == src)
+		if(not_turf_contains_dense_objects(get_turf(get_step(loc, dir))))
+			occupant.forceMove(get_step(loc, dir))
+		else
+			occupant.forceMove(loc)
 	occupant = null
-	for(var/atom/movable/A in src) // In case an object was dropped inside or something
-		if(A == beaker)
+
+	for(var/obj/O in (contents - component_parts)) // In case an object was dropped inside or something. Excludes the beaker and component parts.
+		if(O == beaker)
 			continue
-		A.dropInto(loc)
+		O.dropInto(loc)
 	update_use_power(1)
 	update_icon()
 	toggle_filter()
@@ -249,3 +297,33 @@
 			to_chat(user, "The subject has too many chemicals.")
 	else
 		to_chat(user, "There's no suitable occupant in \the [src].")
+
+//Survival/Stasis sleepers
+/obj/machinery/sleeper/survival_pod
+	name = "stasis pod"
+	desc = "A comfortable pod for stasing of wounded occupants. Similar pods were on first humanity's colonial ships. Now days, you can see them in EMT centers with stasis setting from 20x to 22x."
+	icon_state = "stasis_0"
+	base_icon = "stasis"
+	stasis = 20
+	active_power_usage = 550
+
+/obj/machinery/sleeper/survival_pod/ui_interact(var/mob/user, var/ui_key = "main", var/datum/nanoui/ui = null, var/force_open = 1, var/datum/topic_state/state = GLOB.outside_state)
+	var/data[0]
+
+	data["power"] = stat & (NOPOWER|BROKEN) ? 0 : 1
+
+	if(occupant)
+		var/scan = medical_scan_results(occupant)
+		scan = replacetext(scan,"'notice'","'white'")
+		scan = replacetext(scan,"'warning'","'average'")
+		scan = replacetext(scan,"'danger'","'bad'")
+		data["occupant"] = scan
+	else
+		data["occupant"] = 0
+
+	ui = SSnano.try_update_ui(user, src, ui_key, ui, data, force_open)
+	if(!ui)
+		ui = new(user, src, ui_key, "stasis.tmpl", "Stasis Pod UI", 400, 300, state = state)
+		ui.set_initial_data(data)
+		ui.open()
+		ui.set_auto_update(1)

@@ -28,7 +28,7 @@
 	connected_area.set_lightswitch(on)
 	update_icon()
 
-/obj/machinery/light_switch/update_icon()
+/obj/machinery/light_switch/on_update_icon()
 	if(!overlay)
 		overlay = image(icon, "light1-overlay")
 		overlay.plane = EFFECTS_ABOVE_LIGHTING_PLANE
@@ -42,7 +42,7 @@
 		icon_state = "light[on]"
 		overlay.icon_state = "light[on]-overlay"
 		overlays += overlay
-		set_light(2, 0.3, on ? "#82ff4c" : "#f86060")
+		set_light(0.1, 0.1, 1, 2, on ? "#82ff4c" : "#f86060")
 
 /obj/machinery/light_switch/examine(mob/user)
 	if(..(user, 1))
@@ -63,6 +63,13 @@
 /obj/machinery/light_switch/attack_hand(mob/user)
 	playsound(src, "switch", 30)
 	set_state(!on)
+
+/obj/machinery/light_switch/attackby(obj/item/tool as obj, mob/user as mob)
+	if(istype(tool, /obj/item/weapon/screwdriver))
+		new /obj/item/frame/light_switch(user.loc, 1)
+		qdel(src)
+	else
+		return attack_hand(user)
 
 /obj/machinery/light_switch/powered()
 	. = ..(power_channel, connected_area) //tie our powered status to the connected area

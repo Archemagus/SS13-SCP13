@@ -70,7 +70,7 @@
 
 		discount_item = new_discount_item
 		update_nano_data()
-		GLOB.nanomanager.update_uis(src)
+		SSnano.update_uis(src)
 
 /obj/item/device/uplink/proc/is_improper_item(var/datum/uplink_item/new_discount_item, discount_amount)
 	if(!new_discount_item)
@@ -128,7 +128,7 @@
 	data += nanoui_data
 
 	// update the ui if it exists, returns null if no ui is passed/found
-	ui = GLOB.nanomanager.try_update_ui(user, src, ui_key, ui, data, force_open)
+	ui = SSnano.try_update_ui(user, src, ui_key, ui, data, force_open)
 	if (!ui)	// No auto-refresh
 		ui = new(user, src, ui_key, "uplink.tmpl", title, 450, 600, state = uistate)
 		ui.set_initial_data(data)
@@ -152,7 +152,7 @@
 		. = TOPIC_REFRESH
 	else if(href_list["lock"])
 		toggle()
-		GLOB.nanomanager.close_user_uis(user, src, "main")
+		SSnano.close_user_uis(user, src, "main")
 		. = TOPIC_HANDLED
 	else if(href_list["return"])
 		nanoui_menu = round(nanoui_menu/10)
@@ -185,40 +185,15 @@
 		nanoui_data["items"] = items
 	else if(nanoui_menu == 2)
 		var/permanentData[0]
-		for(var/datum/computer_file/crew_record/L in GLOB.all_crew_records)
+		for(var/datum/computer_file/report/crew_record/L in GLOB.all_crew_records)
 			permanentData[++permanentData.len] = list(Name = L.get_name(),"id" = L.uid, "exploit" = length(L.get_antagRecord()))
 		nanoui_data["exploit_records"] = permanentData
 	else if(nanoui_menu == 21)
 		nanoui_data["exploit_exists"] = 0
 
-		for(var/datum/computer_file/crew_record/L in GLOB.all_crew_records)
+		for(var/datum/computer_file/report/crew_record/L in GLOB.all_crew_records)
 			if(L.uid == exploit_id)
-				nanoui_data["exploit"] = list()  // Setting this to equal L.fields passes it's variables that are lists as reference instead of value.
-								 // We trade off being able to automatically add shit for more control over what gets passed to json
-								 // and if it's sanitized for html.
-				var/list/fields = list(
-					REC_FIELD(name),
-					REC_FIELD(sex),
-					REC_FIELD(age),
-					REC_FIELD(species),
-					REC_FIELD(rank),
-					REC_FIELD(homeSystem),
-					REC_FIELD(citizenship),
-					REC_FIELD(faction),
-					REC_FIELD(religion),
-					REC_FIELD(fingerprint),
-					REC_FIELD(antagRecord))
-				var/list/rec_fields = list()
-				for(var/field in fields)
-					var/record_field/F = locate(field) in L.fields
-					if(!F)
-						continue
-					rec_fields.Add(list(list(
-						"name" = html_encode(F.name), 
-						"val" = F.get_display_value()
-					)))
-				nanoui_data["exploit"]["fields"] =  rec_fields
-
+				nanoui_data["exploit"] = L.generate_nano_data()
 				nanoui_data["exploit_exists"] = 1
 				break
 
@@ -266,3 +241,21 @@
 
 /obj/item/device/uplink/contained/ui_interact(mob/user, ui_key = "main", var/datum/nanoui/ui = null, var/force_open = 1, var/uistate = GLOB.contained_state)
 	return ..()
+
+/obj/item/device/radio/uplink/nuclear/pickup(mob/user)
+	..()
+	var/firstuser
+	if(!firstuser)
+		for(var/obj/item/device/uplink/U in contents)
+			U.uplink_owner = user
+			U.uses = TEAM_TELECRYSTAL_AMOUNT
+		firstuser = 1
+
+/obj/item/device/radio/uplink/empty/pickup(mob/user)
+	..()
+	var/firstuser
+	if(!firstuser)
+		for(var/obj/item/device/uplink/U in contents)
+			U.uplink_owner = user
+			U.uses = 0
+		firstuser = 1

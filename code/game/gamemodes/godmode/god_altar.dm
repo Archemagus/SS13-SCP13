@@ -20,7 +20,7 @@
 	if(istype(I, /obj/item/grab))
 		var/obj/item/grab/G = I
 		if(G.force_danger())
-			G.affecting.forceMove(get_turf(src))
+			G.affecting.dropInto(loc)
 			G.affecting.Weaken(1)
 			user.visible_message("<span class='warning'>\The [user] throws \the [G.affecting] onto \the [src]!</span>")
 			user.drop_from_inventory(G)
@@ -38,7 +38,7 @@
 	cycles_before_converted--
 	if(!cycles_before_converted)
 		src.visible_message("For one thundering moment, \the [target] cries out in pain before going limp and broken.")
-		godcult.add_antagonist_mind(target.mind,1, "Servant of [linked_god]","Your loyalty may be faulty, but you know that it now has control over you...", specific_god=linked_god)
+		GLOB.godcult.add_antagonist_mind(target.mind,1, "Servant of [linked_god]","Your loyalty may be faulty, but you know that it now has control over you...", specific_god=linked_god)
 		remove_target()
 		return
 
@@ -91,7 +91,7 @@
 			M.adjustHalLoss(30)
 		return TOPIC_REFRESH
 
-/obj/structure/deity/altar/update_icon()
+/obj/structure/deity/altar/on_update_icon()
 	overlays.Cut()
 	if(target)
 		overlays += image('icons/effects/effects.dmi', icon_state =  "summoning")

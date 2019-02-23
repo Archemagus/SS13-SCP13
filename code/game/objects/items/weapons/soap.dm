@@ -19,10 +19,12 @@
 /obj/item/weapon/soap/proc/wet()
 	reagents.add_reagent(/datum/reagent/space_cleaner, 15)
 
-/obj/item/weapon/soap/Crossed(AM as mob|obj)
-	if (istype(AM, /mob/living))
-		var/mob/living/M =	AM
-		M.slip("the [src.name]",3)
+/obj/item/weapon/soap/Crossed(var/mob/living/AM)
+	if (istype(AM))
+		if(AM.pulledby)
+			return
+		if(!AM.weakened || !AM.resting)
+			AM.slip("the [src.name]",3)
 
 /obj/item/weapon/soap/afterattack(atom/target, mob/user as mob, proximity)
 	if(!proximity) return
@@ -30,20 +32,35 @@
 	//So this is a workaround. This also makes more sense from an IC standpoint. ~Carn
 	if(user.client && (target in user.client.screen))
 		to_chat(user, "<span class='notice'>You need to take that [target.name] off before cleaning it.</span>")
-	else if(istype(target,/obj/effect/decal/cleanable/blood))
-		to_chat(user, "<span class='notice'>You scrub \the [target.name] out.</span>")
-		target.clean_blood() //Blood is a cleanable decal, therefore needs to be accounted for before all cleanable decals.
-	else if(istype(target,/obj/effect/decal/cleanable))
-		to_chat(user, "<span class='notice'>You scrub \the [target.name] out.</span>")
-		qdel(target)
-	else if(istype(target,/turf))
-		to_chat(user, "<span class='notice'>You scrub \the [target.name] clean.</span>")
-		var/turf/T = target
-		T.clean(src, user)
-	else if(istype(target,/obj/structure/sink))
+	else if(istype(target,/turf) || istype(target, /obj/structure/catwalk) || istype(target,/obj/effect/decal/cleanable))
+		var/turf/T = get_turf(target)
+		if(!T)
+			return
+		var/list/cleanable = list()
+		for(var/obj/effect/C in T)
+			if(istype(C, /obj/effect/rune) || istype(C, /obj/effect/decal/cleanable) || istype(C, /obj/effect/overlay))
+				cleanable += C
+		if(!cleanable.len)
+			to_chat(usr, "<span class='notice'>\The [T] is already clean.</span>")
+			return
+		user.visible_message("<span class='notice'>[user] starts scrubbing \the [T].</span>")
+		for(var/obj/effect/E in cleanable)
+			if(do_after(user, rand(15, 25), E))
+				if(istype(E, /obj/effect/decal/cleanable/blood))
+					to_chat(user, "<span class='notice'>You scrub \the [E] out.</span>")
+					E.clean_blood()
+				else
+					to_chat(user, "<span class='notice'>You scrub \the [E] out.</span>")
+					qdel(E)
+			else
+				break
+	else if(istype(target,/obj/structure/hygiene/sink))
 		to_chat(user, "<span class='notice'>You wet \the [src] in the sink.</span>")
 		wet()
 	else
+		to_chat(user, "<span class='notice'>You start to clean \the [target.name]...</span>")
+		if(!do_mob(user, target, 30))
+			return
 		to_chat(user, "<span class='notice'>You clean \the [target.name].</span>")
 		target.clean_blood() //Clean bloodied atoms. Blood decals themselves need to be handled above.
 	return
@@ -66,13 +83,13 @@
 		return
 	..()
 
-/obj/item/weapon/soap/update_icon()
+/obj/item/weapon/soap/on_update_icon()
 	overlays.Cut()
 	if(key_data)
 		overlays += image('icons/obj/items.dmi', icon_state = "soap_key_overlay")
 
 /obj/item/weapon/soap/nanotrasen
-	desc = "A Soap From Corpses Products brand bar of soap. Smells of mint."
+	desc = "A NanoTrasen-brand bar of soap. Smells of phoron."
 	icon_state = "soapnt"
 
 /obj/item/weapon/soap/deluxe

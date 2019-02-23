@@ -51,7 +51,6 @@
 	return
 
 /obj/structure/lattice/attackby(obj/item/C as obj, mob/user as mob)
-
 	if (istype(C, /obj/item/stack/tile/floor))
 		var/turf/T = get_turf(src)
 		T.attackby(C, user) //BubbleWrap - hand this off to the underlying turf instead
@@ -59,38 +58,35 @@
 	if(isWelder(C))
 		var/obj/item/weapon/weldingtool/WT = C
 		if(WT.remove_fuel(0, user))
-			to_chat(user, "<span class='notice'>Slicing lattice joints ...</span>")
+			to_chat(user, "<span class='notice'>Slicing lattice joints...</span>")
 		new /obj/item/stack/rods(loc)
 		qdel(src)
 	if (istype(C, /obj/item/stack/rods))
 		var/obj/item/stack/rods/R = C
-		if(R.use(2))
-			src.alpha = 0
-			playsound(src, 'sound/weapons/Genhit.ogg', 50, 1)
-			new /obj/structure/catwalk(src.loc)
-			qdel(src)
+		if(R.amount <= 2)
 			return
 		else
-			to_chat(user, "<span class='notice'>You require at least two rods to complete the catwalk.</span>")
+			R.use(2)
+			user << "<span class='notice'>You start connecting [R.name] to [src.name] ...</span>"
+			if(do_after(user,50))
+				src.alpha = 0
+				new /obj/structure/catwalk(src.loc)
+				qdel(src)
 			return
 	return
 
 /obj/structure/lattice/proc/updateOverlays()
-	//if(!(istype(src.loc, /turf/space)))
-	//	qdel(src)
-	spawn(1)
-		overlays = list()
+	overlays.Cut()
 
-		var/dir_sum = 0
+	var/dir_sum = 0
 
-		var/turf/T
-		for (var/direction in GLOB.cardinal)
-			T = get_step(src, direction)
-			if(locate(/obj/structure/lattice, T) || locate(/obj/structure/catwalk, T))
+	var/turf/T
+	for (var/direction in GLOB.cardinal)
+		T = get_step(src, direction)
+		if(locate(/obj/structure/lattice, T) || locate(/obj/structure/catwalk, T))
+			dir_sum += direction
+		else
+			if(!(istype(get_step(src, direction), /turf/space)) && !(istype(get_step(src, direction), /turf/simulated/open)) && !(istype(get_step(src, direction), /turf/simulated/wall/titanium_r)) && !(istype(get_step(src, direction), /turf/simulated/wall/titanium)))
 				dir_sum += direction
-			else
-				if(!(istype(get_step(src, direction), /turf/space)) && !(istype(get_step(src, direction), /turf/simulated/open)))
-					dir_sum += direction
 
-		icon_state = "lattice[dir_sum]"
-		return
+	icon_state = "lattice[dir_sum]"

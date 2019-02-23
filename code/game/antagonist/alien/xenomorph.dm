@@ -1,4 +1,4 @@
-var/datum/antagonist/xenos/xenomorphs
+GLOBAL_DATUM_INIT(xenomorphs, /datum/antagonist/xenos, new)
 
 /datum/antagonist/xenos
 	id = MODE_XENOMORPH
@@ -15,6 +15,7 @@ var/datum/antagonist/xenos/xenomorphs
 		a thrall to the queen and her brood. Obey their instructions without question. Serve the hive."
 	faction = "xenophage"
 	faction_indicator = "hudalien"
+	skill_setter = /datum/antag_skill_setter/alien
 
 	hard_cap = 5
 	hard_cap_round = 8
@@ -24,19 +25,18 @@ var/datum/antagonist/xenos/xenomorphs
 	spawn_announcement_title = "Lifesign Alert"
 	spawn_announcement_delay = 5000
 
-/datum/antagonist/xenos/New(var/no_reference)
-	spawn_announcement = replacetext(GLOB.using_map.unidentified_lifesigns_message, "%STATION_NAME%", station_name())
+/datum/antagonist/xenos/Initialize()
+//	spawn_announcement = replacetext(GLOB.using_map.unidentified_lifesigns_message, "%STATION_NAME%", station_name())
+	spawn_announcement = GLOB.using_map.level_x_biohazard_announcement(9)
 	spawn_announcement_sound = GLOB.using_map.xenomorph_spawn_sound
 	..()
-	if(!no_reference)
-		xenomorphs = src
 
 /datum/antagonist/xenos/attempt_random_spawn()
 	if(config.aliens_allowed) ..()
 
 /datum/antagonist/xenos/proc/get_vents()
 	var/list/vents = list()
-	for(var/obj/machinery/atmospherics/unary/vent_pump/temp_vent in SSmachines.all_machinery)
+	for(var/obj/machinery/atmospherics/unary/vent_pump/temp_vent in SSmachines.machinery)
 		if(!temp_vent.welded && temp_vent.network && (temp_vent.loc.z in GLOB.using_map.station_levels))
 			if(temp_vent.network.normal_members.len > 50)
 				vents += temp_vent

@@ -1,9 +1,13 @@
 /datum/antagonist/proc/can_become_antag(var/datum/mind/player, var/ignore_role)
-	if(player.current && jobban_isbanned(player.current, id))
-		return 0
 
-	var/datum/job/J = job_master ? job_master.GetJob(player.assigned_role) : null
-	if(J && is_type_in_list(J,blacklisted_jobs))
+	if(player.current)
+		if(jobban_isbanned(player.current, id))
+			return 0
+		if(player.current.faction != MOB_FACTION_NEUTRAL)
+			return 0
+
+	var/datum/job/J = job_master.GetJob(player.assigned_role)
+	if(is_type_in_list(J,blacklisted_jobs))
 		return 0
 
 	if(!ignore_role)
@@ -54,12 +58,9 @@
 	return (flags & ANTAG_VOTABLE)
 
 /datum/antagonist/proc/can_late_spawn()
-	if(!ticker)
+	if(!SSticker.mode)
 		return 0
-	if(!(id in ticker.mode.latejoin_antag_tags))
-		return 0
-	update_current_antag_max()
-	if(get_antag_count() >= cur_max)
+	if(!(id in SSticker.mode.latejoin_antag_tags))
 		return 0
 	return 1
 
@@ -68,8 +69,7 @@
 
 /proc/all_random_antag_types()
 	// No caching as the ANTAG_RANDOM_EXCEPTED flag can be added/removed mid-round.
-	var/list/all_antag_types = all_antag_types()
-	var/list/antag_candidates = all_antag_types.Copy()
+	var/list/antag_candidates = GLOB.all_antag_types_.Copy()
 	for(var/datum/antagonist/antag in antag_candidates)
 		if(antag.flags & ANTAG_RANDOM_EXCEPTED)
 			antag_candidates -= antag

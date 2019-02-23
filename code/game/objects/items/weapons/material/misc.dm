@@ -31,7 +31,7 @@
 	item_state = "knife"
 	attack_verb = list("stabbed", "chopped", "cut")
 	applies_material_colour = 1
-	drawsound = 'sound/items/unholster_knife.ogg'
+	hitsound = 'sound/weapons/bladeslice.ogg'
 
 /obj/item/weapon/material/hatchet/machete
 	name = "machete"
@@ -39,7 +39,9 @@
 	item_state = "machete"
 	w_class = ITEM_SIZE_NORMAL
 	slot_flags = SLOT_BELT
-	drawsound = 'sound/items/unholster_knife.ogg'
+	base_parry_chance = 50
+	attack_cooldown_modifier = 1
+	hitsound = 'sound/weapons/bladeslice.ogg'
 
 /obj/item/weapon/material/hatchet/machete/Initialize()
 	icon_state = "machete[pick("","_red","_blue", "_black", "_olive")]"

@@ -1,4 +1,4 @@
-var/datum/antagonist/loyalists/loyalists
+GLOBAL_DATUM_INIT(loyalists, /datum/antagonist/loyalists, new)
 
 /datum/antagonist/loyalists
 	id = MODE_LOYALIST
@@ -24,13 +24,13 @@ var/datum/antagonist/loyalists/loyalists
 	faction_verb = /mob/living/proc/convert_to_loyalist
 	faction_indicator = "hudloyalist"
 	faction_invisible = 1
-	blacklisted_jobs = list(/datum/job/ai)
+	blacklisted_jobs = list(/datum/job/ai, /datum/job/cyborg)
+	skill_setter = /datum/antag_skill_setter/station
 
 	faction = "loyalist"
 
-/datum/antagonist/loyalists/New()
+/datum/antagonist/loyalists/Initialize()
 	..()
-	loyalists = src
 	welcome_text = "You belong to the [GLOB.using_map.company_name], body and soul. Preserve its interests against the conspirators amongst the crew."
 	faction_welcome = "Preserve [GLOB.using_map.company_short]'s interests against the traitorous recidivists amongst the crew. Protect the heads of staff with your life."
 	faction_descriptor = "[GLOB.using_map.company_name]"
@@ -39,7 +39,7 @@ var/datum/antagonist/loyalists/loyalists
 	if(!..())
 		return
 	global_objectives = list()
-	for(var/mob/living/carbon/human/player in GLOB.mob_list)
+	for(var/mob/living/carbon/human/player in SSmobs.mob_list)
 		if(!player.mind || player.stat==2 || !(player.mind.assigned_role in GLOB.command_positions))
 			continue
 		var/datum/objective/protect/loyal_obj = new

@@ -167,11 +167,9 @@ obj/machinery/resleever/Process()
 			to_chat(user, "<span class='warning'>You need to remove the occupant first!</span>")
 			return
 	if(istype(W, /obj/item/organ/internal/stack))
-		if(isnull(lace))
+		if(isnull(lace) && user.unEquip(W, src))
 			to_chat(user, "<span class='notice'>You insert \the [W] into [src].</span>")
-			user.drop_from_inventory(W)
 			lace = W
-			W.forceMove(src)
 			if(lace.backup)
 				lace_name = lace.backup.name
 		else
@@ -266,7 +264,7 @@ obj/machinery/resleever/Process()
 		else
 	return
 
-/obj/machinery/resleever/update_icon()
+/obj/machinery/resleever/on_update_icon()
 	..()
 	icon_state = empty_state
 	if(occupant)

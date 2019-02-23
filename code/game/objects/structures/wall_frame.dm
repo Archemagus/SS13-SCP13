@@ -7,20 +7,19 @@
 	icon = 'icons/obj/wall_frame.dmi'
 	icon_state = "frame"
 
-	atom_flags = ATOM_FLAG_CLIMBABLE
+	atom_flags = ATOM_FLAG_NO_TEMP_CHANGE | ATOM_FLAG_CLIMBABLE
 	anchored = 1
 	density = 1
 	throwpass = 1
 	layer = TABLE_LAYER
-	color = COLOR_GUNMETAL
+	color = "#666666"
+//	color = COLOR_GUNMETAL //INFINITY: Because we aren't using it.
 
-	var/damage = 0
-	var/maxhealth = 10
-	var/health = 10
+	var/health = 100
 	var/stripe_color
 
-	blend_objects = list(/obj/machinery/door) // Objects which to blend with
-	noblend_objects = list(/obj/machinery/door/window)
+	blend_objects = list(/obj/machinery/door, /turf/simulated/wall) // Objects which to blend with
+	noblend_objects = list(/obj/machinery/door/window, /obj/machinery/door/blast/regular/evacshield)
 
 /obj/structure/wall_frame/New(var/new_loc)
 	..(new_loc)
@@ -65,25 +64,26 @@
 			return 0
 
 		for(var/obj/structure/window/WINDOW in loc)
-			to_chat(user, "<span class='notice'>There is already a window here.</span>")
-			return
-		to_chat(user, "<span class='notice'>You start placing the window.</span>")
-		if(do_after(user,20,src))
-			// window created?
-			for(var/obj/structure/window/WINDOW in loc)
+			if(WINDOW)
 				to_chat(user, "<span class='notice'>There is already a window here.</span>")
 				return
+		to_chat(user, "<span class='notice'>You start placing the window.</span>")
+		if(do_after(user,20,src))
+			for(var/obj/structure/window/WINDOW in loc)
+				if(WINDOW)//checking this for a 2nd time to check if a window was made while we were waiting.
+					to_chat(user, "<span class='notice'>There is already a window here.</span>")
+					return
 
 			var/wtype = ST.material.created_window
-			if (ST.use(1))
+			if (ST.use(4))
 				var/obj/structure/window/WD = new wtype(loc, 5, 1)
 				to_chat(user, "<span class='notice'>You place the [WD] on [src].</span>")
 				WD.update_connections(1)
 				WD.update_icon()
 		return
-
 	//window placing end
-	else if(isWrench(W))
+
+	if(isWrench(W))
 		for(var/obj/structure/S in loc)
 			if(istype(S, /obj/structure/window))
 				to_chat(user, "<span class='notice'>There is still a window on the low wall!</span>")
@@ -110,7 +110,7 @@
 
 // icon related
 
-/obj/structure/wall_frame/update_icon()
+/obj/structure/wall_frame/on_update_icon()
 	overlays.Cut()
 	var/image/I
 
@@ -121,7 +121,6 @@
 		else
 			I = image('icons/obj/wall_frame.dmi', "frame[connections[i]]", dir = 1<<(i-1))
 		overlays += I
-	return
 
 	if(stripe_color)
 		for(var/i = 1 to 4)
@@ -133,10 +132,25 @@
 			overlays += I
 
 /obj/structure/wall_frame/titanium
-	color = COLOR_TITANIUM
+	color = "#96a5a0"
 
 /obj/structure/wall_frame/hull
 	color = COLOR_HULL
+
+/obj/structure/wall_frame/osmium
+	color = "#9bc6f2"
+
+/obj/structure/wall_frame/voxalloy
+	color = "#6c7364"
+
+/obj/structure/wall_frame/prepainted
+	color = COLOR_GUNMETAL
+
+/obj/structure/wall_frame/wood
+	color = "#824b28"
+
+/obj/structure/wall_frame/crystal
+	color = COLOR_PALE_BLUE_GRAY
 
 /obj/structure/wall_frame/hull/Initialize()
 	. = ..()
@@ -171,16 +185,10 @@
 	take_damage(tforce)
 
 /obj/structure/wall_frame/proc/dismantle()
-	new /obj/item/stack/material/steel(get_turf(src))
+	new /obj/item/stack/material/steel(get_turf(src), 2)
 	qdel(src)
 
-/obj/structure/wall_frame/proc/take_damage(dam)
-	if(dam)
-		damage = max(0, damage + dam)
-		update_damage()
-	return
-
-/obj/structure/wall_frame/proc/update_damage()
-	if(damage >= 150)
+/obj/structure/wall_frame/take_damage(damage)
+	health -= damage
+	if(health <= 0)
 		dismantle()
-	return

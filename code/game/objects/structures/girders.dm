@@ -5,11 +5,16 @@
 	plane = OBJ_PLANE
 	layer = BELOW_OBJ_LAYER
 	w_class = ITEM_SIZE_NO_CONTAINER
+	color = "#666666"
 	var/state = 0
 	var/health = 200
 	var/cover = 50 //how much cover the girder provides against projectiles.
 	var/material/reinf_material
 	var/reinforcing = 0
+
+/obj/structure/girder/Initialize()
+	set_extension(src, /datum/extension/penetration, /datum/extension/penetration/simple, 100)
+	. = ..()
 
 /obj/structure/girder/displaced
 	icon_state = "displaced"
@@ -20,9 +25,13 @@
 /obj/structure/girder/attack_generic(var/mob/user, var/damage, var/attack_message = "smashes apart", var/wallbreaker)
 	if(!damage || !wallbreaker)
 		return 0
+	health -= damage
 	attack_animation(user)
-	visible_message("<span class='danger'>[user] [attack_message] the [src]!</span>")
-	spawn(1) dismantle()
+	if(health <= 0)
+		user.visible_message("<span class='danger'>[user] [attack_message] \the [src] apart!</span>")
+		spawn(1) dismantle()
+	else
+		user.visible_message("<span class='danger'>[user] [attack_message] \the [src]!</span>")
 	return 1
 
 /obj/structure/girder/bullet_act(var/obj/item/projectile/Proj)
@@ -44,12 +53,16 @@
 
 	return
 
+/obj/structure/girder/CanFluidPass(var/coming_from)
+	return TRUE
+
 /obj/structure/girder/proc/reset_girder()
 	anchored = 1
 	cover = initial(cover)
 	health = min(health,initial(health))
 	state = 0
 	icon_state = initial(icon_state)
+	color = "#666666"
 	reinforcing = 0
 	if(reinf_material)
 		reinforce_girder()
@@ -100,8 +113,11 @@
 		if(do_after(user, 40,src))
 			if(!src) return
 			to_chat(user, "<span class='notice'>You removed the support struts!</span>")
-			reinf_material.place_dismantled_product(get_turf(src))
-			reinf_material = null
+
+			if(reinf_material)
+				reinf_material.place_dismantled_product(get_turf(src))
+				reinf_material = null
+
 			reset_girder()
 
 	else if(isCrowbar(W) && state == 0 && anchored)
@@ -131,7 +147,7 @@
 		to_chat(user, "<span class='notice'>There isn't enough material here to construct a wall.</span>")
 		return 0
 
-	var/material/M = name_to_material[S.default_type]
+	var/material/M = SSmaterials.get_material_by_name(S.default_type)
 	if(!istype(M))
 		return 0
 
@@ -172,7 +188,7 @@
 		to_chat(user, "<span class='notice'>There isn't enough material here to reinforce the girder.</span>")
 		return 0
 
-	var/material/M = name_to_material[S.default_type]
+	var/material/M = S.material
 	if(!istype(M) || M.integrity < 50)
 		to_chat(user, "You cannot reinforce \the [src] with that; it is too soft.")
 		return 0
@@ -191,6 +207,7 @@
 	health = 500
 	state = 2
 	icon_state = "reinforced"
+	color = "#777777"
 	reinforcing = 0
 
 /obj/structure/girder/proc/dismantle()
@@ -198,15 +215,8 @@
 	qdel(src)
 
 /obj/structure/girder/attack_hand(mob/user as mob)
-	if (HULK in user.mutations)
+	if (MUTATION_HULK in user.mutations)
 		visible_message("<span class='danger'>[user] smashes [src] apart!</span>")
-		dismantle()
-		return
-	return ..()
-
-/obj/structure/girder/attackby(obj/item/weapon/W as obj, mob/user as mob)
-	if (istype(W,/obj/item/weapon/melee/energy/breach))
-		visible_message("<span class='danger'>[user] slices [src] apart!</span>")
 		dismantle()
 		return
 	return ..()
@@ -228,11 +238,16 @@
 		else
 	return
 
+/obj/structure/girder/reinforced
+	icon_state = "reinforced"
+	color = "#777777"
+
 /obj/structure/girder/cult
 	icon= 'icons/obj/cult.dmi'
 	icon_state= "cultgirder"
 	health = 250
 	cover = 70
+	color = null
 
 /obj/structure/girder/cult/dismantle()
 	qdel(src)

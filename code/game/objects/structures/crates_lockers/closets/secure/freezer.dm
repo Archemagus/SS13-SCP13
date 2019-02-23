@@ -4,6 +4,7 @@
 
 /obj/structure/closet/secure_closet/freezer/kitchen/WillContain()
 	return list(
+		/obj/item/weapon/reagent_containers/food/condiment/salt = 1,
 		/obj/item/weapon/reagent_containers/food/condiment/flour = 7,
 		/obj/item/weapon/reagent_containers/food/condiment/sugar = 2
 	)
@@ -21,7 +22,8 @@
 
 /obj/structure/closet/secure_closet/freezer/meat/WillContain()
 	return list(
-		/obj/item/weapon/reagent_containers/food/snacks/meat/monkey = 10
+		/obj/item/weapon/reagent_containers/food/snacks/meat/beef = 8,
+		/obj/item/weapon/reagent_containers/food/snacks/fish = 4
 	)
 
 /obj/structure/closet/secure_closet/freezer/fridge
@@ -60,3 +62,17 @@
 			new cash_type(src)
 		else
 			break
+
+/obj/structure/closet/secure_closet/freezer/var/jones = FALSE
+
+/obj/structure/closet/secure_closet/freezer/ex_act()
+	if(!jones)
+		jones = TRUE
+	else
+		..()
+/obj/structure/closet/fridge
+	name = "fridge"
+	icon = 'icons/obj/closets_inf.dmi'
+	icon_state = "fridge"
+	icon_closed = "fridge"
+	icon_opened = "fridgeopen"

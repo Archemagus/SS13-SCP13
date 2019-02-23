@@ -12,6 +12,24 @@
 		R.add_fingerprint(user)
 		qdel(src)
 
+	ex_act(severity)
+		switch(severity)
+			if(1)
+				for(var/atom/movable/A in src)//pulls everything out of the locker and hits it with an explosion
+					A.forceMove(src.loc)
+					A.ex_act(severity + 1)
+				qdel(src)
+			if(2)
+				if(prob(90))
+					for (var/atom/movable/A in src)
+						A.forceMove(src.loc)
+						A.ex_act(severity + 1)
+					qdel(src)
+			if(3)
+				if(prob(70))
+					for(var/atom/movable/A in src)
+						A.forceMove(src.loc)
+					qdel(src)
 
 /obj/item/weapon/storage/box/bodybags
 	name = "body bags"
@@ -63,14 +81,6 @@
 		src.overlays.Cut()
 		to_chat(user, "You cut the tag off \the [src].")
 		return
-	else if(istype(W, /obj/item/device/healthanalyzer/) && !opened)
-		if(contains_body)
-			var/obj/item/device/healthanalyzer/HA = W
-			for(var/mob/living/L in contents)
-				HA.scan_mob(L, user)
-		else
-			to_chat(user, "\The [W] reports that \the [src] is empty.")
-		return
 
 /obj/structure/closet/body_bag/store_mobs(var/stored_units)
 	contains_body = ..()
@@ -83,7 +93,7 @@
 	return 0
 
 /obj/structure/closet/body_bag/proc/fold(var/user)
-	if(!ishuman(user))	return 0
+	if(!(ishuman(user) || isrobot(user)))	return 0
 	if(opened)	return 0
 	if(contents.len)	return 0
 	visible_message("[user] folds up the [name]")
@@ -95,7 +105,7 @@
 	if((over_object == usr && (in_range(src, usr) || usr.contents.Find(src))))
 		fold(usr)
 
-/obj/structure/closet/body_bag/update_icon()
+/obj/structure/closet/body_bag/on_update_icon()
 	if(opened)
 		icon_state = icon_opened
 	else
@@ -103,3 +113,14 @@
 			icon_state = "bodybag_closed1"
 		else
 			icon_state = icon_closed
+
+/obj/item/robot_rack/body_bag
+	name = "stasis bag rack"
+	desc = "A rack for carrying folded stasis bags and body bags."
+	icon = 'icons/obj/cryobag.dmi'
+	icon_state = "bodybag_folded"
+	object_type = /obj/item/bodybag
+	interact_type = /obj/structure/closet/body_bag
+	capacity = 3
+
+

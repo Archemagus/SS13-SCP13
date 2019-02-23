@@ -21,6 +21,8 @@
 
 /* Tosses things in a certain direction */
 
+/datum/movement_handler/no_move/toss
+
 /obj/effect/step_trigger/thrower
 	var/direction = SOUTH // the direction of throw
 	var/tiles = 3	// if 0: forever until atom hits a stopper
@@ -29,6 +31,7 @@
 	var/facedir = 0 // if 1: atom faces the direction of movement
 	var/nostop = 0 // if 1: will only be stopped by teleporters
 	var/list/affecting = list()
+	icon = 'icons/obj/infinity_throwers.dmi'
 
 /obj/effect/step_trigger/thrower/Trigger(var/atom/movable/AM)
 	if(!AM || !istype(AM) || !AM.simulated)
@@ -42,7 +45,7 @@
 	if(ismob(AM))
 		var/mob/M = AM
 		if(immobilize)
-			M.canmove = 0
+			M.AddMovementHandler(/datum/movement_handler/no_move/toss)
 
 	affecting.Add(AM)
 	while(AM && !stopthrow)
@@ -79,7 +82,7 @@
 	if(ismob(AM))
 		var/mob/M = AM
 		if(immobilize)
-			M.canmove = 1
+			M.RemoveMovementHandler(/datum/movement_handler/no_move/toss)
 
 /* Stops things thrown by a thrower, doesn't do anything */
 

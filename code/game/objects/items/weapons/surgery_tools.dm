@@ -16,10 +16,11 @@
 	desc = "Retracts stuff."
 	icon = 'icons/obj/surgery.dmi'
 	icon_state = "retractor"
-	matter = list(DEFAULT_WALL_MATERIAL = 10000, "glass" = 5000)
+	matter = list(MATERIAL_STEEL = 10000, MATERIAL_GLASS = 5000)
 	obj_flags = OBJ_FLAG_CONDUCTIBLE
 	w_class = ITEM_SIZE_SMALL
 	origin_tech = list(TECH_MATERIAL = 1, TECH_BIO = 1)
+	safely = 1
 
 /*
  * Hemostat
@@ -29,11 +30,19 @@
 	desc = "You think you have seen this before."
 	icon = 'icons/obj/surgery.dmi'
 	icon_state = "hemostat"
-	matter = list(DEFAULT_WALL_MATERIAL = 5000, "glass" = 2500)
+	matter = list(MATERIAL_STEEL = 5000, MATERIAL_GLASS = 2500)
 	obj_flags = OBJ_FLAG_CONDUCTIBLE
 	w_class = ITEM_SIZE_SMALL
 	origin_tech = list(TECH_MATERIAL = 1, TECH_BIO = 1)
 	attack_verb = list("attacked", "pinched")
+	safely = 1
+
+/obj/item/weapon/hemostat/pico
+	name = "precision grasper"
+	desc = "A thin rod with pico manipulators embedded in it allowing for fast and precise extraction."
+	icon = 'icons/obj/surgery_inf.dmi'
+	icon_state = "pico_grasper"
+	surgery_speed = 0.5
 
 /*
  * Cautery
@@ -43,11 +52,12 @@
 	desc = "This stops bleeding."
 	icon = 'icons/obj/surgery.dmi'
 	icon_state = "cautery"
-	matter = list(DEFAULT_WALL_MATERIAL = 5000, "glass" = 2500)
+	matter = list(MATERIAL_STEEL = 5000, MATERIAL_GLASS = 2500)
 	obj_flags = OBJ_FLAG_CONDUCTIBLE
 	w_class = ITEM_SIZE_SMALL
 	origin_tech = list(TECH_MATERIAL = 1, TECH_BIO = 1)
 	attack_verb = list("burnt")
+	safely = 1
 
 /*
  * Surgical Drill
@@ -58,12 +68,13 @@
 	icon = 'icons/obj/surgery.dmi'
 	icon_state = "drill"
 	hitsound = 'sound/weapons/circsawhit.ogg'
-	matter = list(DEFAULT_WALL_MATERIAL = 15000, "glass" = 10000)
+	matter = list(MATERIAL_STEEL = 15000, MATERIAL_GLASS = 10000)
 	obj_flags = OBJ_FLAG_CONDUCTIBLE
 	force = 15.0
 	w_class = ITEM_SIZE_NORMAL
 	origin_tech = list(TECH_MATERIAL = 1, TECH_BIO = 1)
 	attack_verb = list("drilled")
+	safely = 1
 
 /*
  * Scalpel
@@ -83,8 +94,9 @@
 	throw_speed = 3
 	throw_range = 5
 	origin_tech = list(TECH_MATERIAL = 1, TECH_BIO = 1)
-	matter = list(DEFAULT_WALL_MATERIAL = 10000, "glass" = 5000)
+	matter = list(MATERIAL_STEEL = 10000, MATERIAL_GLASS = 5000)
 	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
+	safely = 1
 
 /*
  * Researchable Scalpels
@@ -94,6 +106,8 @@
 	desc = "A scalpel augmented with a directed laser, for more precise cutting without blood entering the field.  This one looks basic and could be improved."
 	icon_state = "scalpel_laser1_on"
 	damtype = "fire"
+	surgery_speed = 0.8
+
 
 /obj/item/weapon/scalpel/laser2
 	name = "laser scalpel"
@@ -101,6 +115,7 @@
 	icon_state = "scalpel_laser2_on"
 	damtype = "fire"
 	force = 12.0
+	surgery_speed = 0.6
 
 /obj/item/weapon/scalpel/laser3
 	name = "laser scalpel"
@@ -108,12 +123,15 @@
 	icon_state = "scalpel_laser3_on"
 	damtype = "fire"
 	force = 15.0
+	surgery_speed = 0.4
+
 
 /obj/item/weapon/scalpel/manager
 	name = "incision management system"
 	desc = "A true extension of the surgeon's body, this marvel instantly and completely prepares an incision allowing for the immediate commencement of therapeutic steps."
 	icon_state = "scalpel_manager_on"
 	force = 7.5
+	surgery_speed = 0.2
 
 /*
  * Circular Saw
@@ -131,10 +149,19 @@
 	throw_speed = 3
 	throw_range = 5
 	origin_tech = list(TECH_MATERIAL = 1, TECH_BIO = 1)
-	matter = list(DEFAULT_WALL_MATERIAL = 20000,"glass" = 10000)
+	matter = list(MATERIAL_STEEL = 20000,MATERIAL_GLASS = 10000)
 	attack_verb = list("attacked", "slashed", "sawed", "cut")
 	sharp = 1
 	edge = 1
+
+/obj/item/weapon/circular_saw/plasmasaw //Orange transparent chainsaw!
+	name = "plasma saw"
+	desc = "Perfect for cutting through ice."
+	icon = 'icons/obj/surgery_inf.dmi'
+	icon_state = "plasmasaw"
+	force = 25.0
+	surgery_speed = 0.5
+
 
 //misc, formerly from code/defines/weapons.dm
 /obj/item/weapon/bonegel
@@ -155,6 +182,13 @@
 	w_class = ITEM_SIZE_SMALL
 	var/usage_amount = 10
 
+/obj/item/weapon/FixOVein/clot
+	name = "capillary laying operation tool" //C.L.O.T.
+	desc = "A canister like tool that stores synthetic vein."
+	icon = 'icons/obj/surgery_inf.dmi'
+	icon_state = "clot"
+	surgery_speed = 0.5
+
 /obj/item/weapon/bonesetter
 	name = "bone setter"
 	icon = 'icons/obj/surgery.dmi'
@@ -165,3 +199,11 @@
 	throw_range = 5
 	w_class = ITEM_SIZE_SMALL
 	attack_verb = list("attacked", "hit", "bludgeoned")
+	safely = 1
+
+/obj/item/weapon/bonesetter/bone_mender
+	name = "bone mender"
+	desc = "A favorite among skeletons. It even sounds like a skeleton too."
+	icon = 'icons/obj/surgery_inf.dmi'
+	icon_state = "bone-mender"
+	surgery_speed = 0.5

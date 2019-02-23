@@ -1,13 +1,16 @@
+GLOBAL_DATUM_INIT(changelings, /datum/antagonist/changeling, new)
+
 /datum/antagonist/changeling
 	id = MODE_CHANGELING
 	role_text = "Shapeshifter"
 	role_text_plural = "Shapeshifters"
 	feedback_tag = "changeling_objective"
-	blacklisted_jobs = list(/datum/job/ai, /datum/job/assistant, /datum/job/captain, /datum/job/hos, /datum/job/rd, /datum/job/o5rep, /datum/job/commsofficer)
-	protected_jobs = list()
-	welcome_text = "You are a shapeshifter, disguised as a member of Foundation staff! Use say \"#g message\" to communicate with your fellow shapeshifters. Remember: you get all of their absorbed DNA if you absorb them."
+	blacklisted_jobs = list(/datum/job/ai, /datum/job/cyborg)
+	protected_jobs = list(/datum/job/assistant, /datum/job/warden, /datum/job/detective, /datum/job/captain, /datum/job/hos/datum/job/rd, /datum/job/o5rep, /datum/job/commsofficer)
+	welcome_text = "Используйте say \",g message\" чтобы св&#255;затьс&#255; с другими Шейпшифтерами (&#255 сам не ебу кто это). Помните: вы получите все поглащенные ими ДНКа, если поглотите их самих.."
 	flags = ANTAG_SUSPICIOUS | ANTAG_RANDSPAWN | ANTAG_VOTABLE
 	antaghud_indicator = "hudchangeling"
+	skill_setter = /datum/antag_skill_setter/station
 
 	faction = "changeling"
 
@@ -42,8 +45,8 @@
 	steal_objective.find_target()
 	changeling.objectives += steal_objective
 
-	switch(rand(1,100))
-		if(1 to 80)
+	switch(rand(1,10))
+		if(1)
 			if (!(locate(/datum/objective/escape) in changeling.objectives))
 				var/datum/objective/escape/escape_objective = new
 				escape_objective.owner = changeling

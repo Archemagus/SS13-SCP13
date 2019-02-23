@@ -11,7 +11,7 @@
 	throw_speed = 1
 	throw_range = 2
 
-	matter = list(DEFAULT_WALL_MATERIAL = 750,"waste" = 750)
+	matter = list(MATERIAL_STEEL = 750,MATERIAL_WASTE = 750)
 
 	origin_tech = list(TECH_POWER = 3, TECH_ILLEGAL = 5)
 	var/drain_rate = 1500000		// amount of power to drain per tick
@@ -82,17 +82,13 @@
 /obj/item/device/powersink/pwr_drain()
 	if(!attached)
 		return 0
-
 	if(drained_this_tick)
 		return 1
 	drained_this_tick = 1
-
 	var/drained = 0
-
 	if(!PN)
 		return 1
-
-	set_light(12)
+	set_light(0.5, 0.1, 12)
 	PN.trigger_warning()
 	// found a powernet, so drain up to max power from it
 	drained = PN.draw_power(drain_rate)

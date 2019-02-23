@@ -33,7 +33,7 @@
 	update_icon()
 
 //maybe add soft lighting? Maybe, though not everything needs it
-/obj/machinery/holosign/update_icon()
+/obj/machinery/holosign/on_update_icon()
 	if (!lit || (stat & (BROKEN|NOPOWER)))
 		icon_state = "sign_off"
 	else
@@ -43,13 +43,14 @@
 	name = "surgery holosign"
 	desc = "Small wall-mounted holographic projector. This one reads SURGERY."
 	on_icon = "surgery"
+	layer = 5.1
 ////////////////////SWITCH///////////////////////////////////////
 
 /obj/machinery/button/holosign
 	name = "holosign switch"
 	desc = "A remote control switch for holosign."
 	icon = 'icons/obj/power.dmi'
-	icon_state = "crema_switch"
+	icon_state = "light0"
 
 /obj/machinery/button/holosign/attack_hand(mob/user as mob)
 	if(..())
@@ -59,8 +60,7 @@
 
 	active = !active
 	update_icon()
-
-	for(var/obj/machinery/holosign/M in SSmachines.all_machinery)
+	for(var/obj/machinery/holosign/M in SSmachines.machinery)
 		if (M.id == src.id)
 			spawn( 0 )
 				M.toggle()
@@ -68,6 +68,5 @@
 
 	return
 
-/obj/machinery/button/holosign/update_icon()
+/obj/machinery/button/holosign/on_update_icon()
 	icon_state = "light[active]"
-	return

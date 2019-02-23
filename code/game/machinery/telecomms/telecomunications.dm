@@ -24,6 +24,7 @@ var/global/list/obj/machinery/telecomms/telecomms_list = list()
 	var/network = "NULL" // the network of the machinery
 
 	var/list/freq_listening = list() // list of frequencies to tune into: if none, will listen to all
+	var/list/channel_tags = list() // a list specifying what to tag packets on different frequencies
 
 	var/machinetype = 0 // just a hacky way of preventing alike machines from pairing
 	var/toggled = 1 	// Is it toggled on
@@ -154,7 +155,7 @@ var/global/list/obj/machinery/telecomms/telecomms_list = list()
 				if(src != T)
 					links |= T
 
-/obj/machinery/telecomms/update_icon()
+/obj/machinery/telecomms/on_update_icon()
 	if(on && !overloaded_for)
 		icon_state = initial(icon_state)
 	else
@@ -170,7 +171,6 @@ var/global/list/obj/machinery/telecomms/telecomms_list = list()
 		on = 0
 	use_power = on
 
-#define NO_TELECOMMS_ATMOS // stops telecomms from malfunctioning when there's no atmos
 /obj/machinery/telecomms/Process()
 	update_power()
 
@@ -178,16 +178,13 @@ var/global/list/obj/machinery/telecomms/telecomms_list = list()
 		overloaded_for--
 
 	// Check heat and generate some
-	#ifndef NO_TELECOMMS_ATMOS
 	checkheat()
-	#endif
 
 	// Update the icon
 	update_icon()
 
 	if(traffic > 0)
 		traffic -= netspeed
-#undef NO_TELECOMMS_ATMOS
 
 /obj/machinery/telecomms/emp_act(severity)
 	if(prob(100/severity))
@@ -371,7 +368,7 @@ var/global/list/obj/machinery/telecomms/telecomms_list = list()
 	if(z in GLOB.using_map.station_levels)
 		idle_power_usage = 2.5 KILOWATTS
 	else
-		idle_power_usage = 30 KILOWATTS
+		idle_power_usage = 100 KILOWATTS
 
 /obj/machinery/telecomms/relay/receive_information(datum/signal/signal, obj/machinery/telecomms/machine_from)
 
@@ -541,6 +538,11 @@ var/global/list/obj/machinery/telecomms/telecomms_list = list()
 			if(traffic > 0)
 				totaltraffic += traffic // add current traffic to total traffic
 
+			// channel tag the signal
+			var/list/data = get_channel_info(signal.frequency)
+			signal.data["channel_tag"] = data[1]
+			signal.data["channel_color"] = data[2]
+
 			//Is this a test signal? Bypass logging
 			if(signal.data["type"] != 4)
 
@@ -639,7 +641,11 @@ var/global/list/obj/machinery/telecomms/telecomms_list = list()
 	log_entries.Add(log)
 	update_logs()
 
-
+/obj/machinery/telecomms/server/proc/get_channel_info(var/freq)
+	for(var/list/rule in channel_tags)
+		if(rule[1] == freq)
+			return list(rule[2], rule[3])
+	return list(format_frequency(freq), channel_color_presets["Global Green"])
 
 
 // Simple log entry datum

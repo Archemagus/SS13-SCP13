@@ -41,7 +41,7 @@
 	idle_power_usage = 80
 	active_power_usage = 1000 //For heating/cooling rooms. 1000 joules equates to about 1 degree every 2 seconds for a single tile of air.
 	power_channel = ENVIRON
-	req_one_access = list(access_mtflvl2)
+	req_one_access = list(access_atmospherics, access_engine_equip)
 	clicksound = "button"
 	clickvol = 30
 
@@ -98,8 +98,8 @@
 /obj/machinery/alarm/server/New()
 	..()
 	req_access = list(access_rd, access_atmospherics, access_engine_equip)
-	TLV["temperature"] =	list(T0C-26, T0C, T0C+30, T0C+40) // K
-	target_temperature = T0C+10
+	TLV["temperature"] =	list(T0C-32, T0C, T0C+30, T0C+40) // K
+	target_temperature = T0C+1
 
 /obj/machinery/alarm/Destroy()
 	unregister_radio(src, frequency)
@@ -119,8 +119,8 @@
 	if(istype(frame))
 		buildstage = 0
 		wiresexposed = 1
-		pixel_x = (dir & 3)? 0 : (dir == 4 ? -24 : 24)
-		pixel_y = (dir & 3)? (dir ==1 ? -24 : 24) : 0
+		pixel_x = (dir & 3)? 0 : (dir == 4 ? -21 : 21)
+		pixel_y = (dir & 3)? (dir ==1 ? -21 : 21) : 0
 		update_icon()
 		frame.transfer_fingerprints_to(src)
 
@@ -130,6 +130,8 @@
 	area_uid = alarm_area.uid
 	if (name == "alarm")
 		SetName("[alarm_area.name] Air Alarm")
+
+	name = replacetextEx(name, "\improper", "")
 
 	if(!wires)
 		wires = new(src)
@@ -148,6 +150,7 @@
 	set_frequency(frequency)
 	if (!master_is_operating())
 		elect_master()
+	update_icon()
 
 /obj/machinery/alarm/Process()
 	if((stat & (NOPOWER|BROKEN)) || shorted || buildstage != 2)
@@ -303,7 +306,7 @@
 		return 1
 	return 0
 
-/obj/machinery/alarm/update_icon()
+/obj/machinery/alarm/on_update_icon()
 	if(wiresexposed)
 		icon_state = "alarmx"
 		set_light(0)
@@ -342,7 +345,7 @@
 		else if(dir == EAST)
 			pixel_x = -21
 
-	set_light(l_range = 2, l_power = 0.6, l_color = new_color)
+	set_light(0.25, 0.1, 1, 2, new_color)
 
 /obj/machinery/alarm/receive_signal(datum/signal/signal)
 	if(stat & (NOPOWER|BROKEN))
@@ -427,7 +430,7 @@
 	switch(mode)
 		if(AALARM_MODE_SCRUBBING)
 			for(var/device_id in alarm_area.air_scrub_names)
-				send_signal(device_id, list("power"= 1, "co2_scrub"= 1, "scrubbing"= 1, "panic_siphon"= 0) )
+				send_signal(device_id, list("power"= 1, "co2_scrub"= 1, "scrubbing"= SCRUBBER_SCRUB, "panic_siphon"= 0) )
 			for(var/device_id in alarm_area.air_vent_names)
 				send_signal(device_id, list("power"= 1, "checks"= "default", "set_external_pressure"= "default") )
 
@@ -514,7 +517,7 @@
 	if(!(locked && !remote_connection) || remote_access || issilicon(user))
 		populate_controls(data)
 
-	ui = GLOB.nanomanager.try_update_ui(user, src, ui_key, ui, data, force_open)
+	ui = SSnano.try_update_ui(user, src, ui_key, ui, data, force_open)
 	if(!ui)
 		ui = new(user, src, ui_key, "air_alarm.tmpl", src.name, 325, 625, master_ui = master_ui, state = state)
 		ui.set_initial_data(data)
@@ -605,7 +608,6 @@
 			var/list/gas_names = list(
 				"oxygen"         = "O<sub>2</sub>",
 				"carbon dioxide" = "CO<sub>2</sub>",
-				"phoron"         = "Toxin",
 				"other"          = "Other")
 			for (var/g in gas_names)
 				thresholds[++thresholds.len] = list("name" = gas_names[g], "settings" = list())
@@ -694,10 +696,13 @@
 					"co2_scrub",
 					"tox_scrub",
 					"n2o_scrub",
-					"panic_siphon",
-					"scrubbing")
+					"panic_siphon")
 
 					send_signal(device_id, list(href_list["command"] = text2num(href_list["val"]) ) )
+					return TOPIC_REFRESH
+
+				if("scrubbing")
+					send_signal(device_id, list(href_list["command"] = href_list["scrub_mode"]) )
 					return TOPIC_REFRESH
 
 				if("set_threshold")
@@ -786,7 +791,9 @@
 			if(isScrewdriver(W))  // Opening that Air Alarm up.
 //				to_chat(user, "You pop the Air Alarm's maintence panel open.")
 				wiresexposed = !wiresexposed
-				to_chat(user, "The wires have been [wiresexposed ? "exposed" : "unexposed"]")
+				var/interact_sound = "[wiresexposed ? "open" : "close"]"
+				to_chat(user, "The wires have been [wiresexposed ? "exposed" : "unexposed"].")
+				playsound(src.loc, "sound/machines/Custom_screwdriver[interact_sound].ogg", 50, 1)
 				update_icon()
 				return
 
@@ -798,7 +805,7 @@
 				update_icon()
 				return
 
-			if (istype(W, /obj/item/weapon/card/id) || istype(W, /obj/item/device/pda))// trying to unlock the interface with an ID card
+			if (istype(W, /obj/item/weapon/card/id) || istype(W, /obj/item/modular_computer))// trying to unlock the interface with an ID card
 				if(stat & (NOPOWER|BROKEN))
 					to_chat(user, "It does nothing")
 					return
@@ -825,7 +832,7 @@
 			else if(isCrowbar(W))
 				to_chat(user, "You start prying out the circuit.")
 				playsound(src.loc, 'sound/items/Crowbar.ogg', 50, 1)
-				if(do_after(user,20))
+				if(do_after(user,20) && buildstage == 1)
 					to_chat(user, "You pry out the circuit!")
 					var/obj/item/weapon/airalarm_electronics/circuit = new /obj/item/weapon/airalarm_electronics()
 					circuit.dropInto(user.loc)
@@ -864,7 +871,7 @@ Just a object used in constructing air alarms
 	icon_state = "door_electronics"
 	desc = "Looks like a circuit. Probably is."
 	w_class = ITEM_SIZE_SMALL
-	matter = list(DEFAULT_WALL_MATERIAL = 50, "glass" = 50)
+	matter = list(MATERIAL_STEEL = 50, MATERIAL_GLASS = 50)
 
 /*
 FIRE ALARM
@@ -894,7 +901,11 @@ FIRE ALARM
 	var/decl/security_state/security_state = decls_repository.get_decl(GLOB.using_map.security_state)
 	to_chat(user, "The current alert level is [security_state.current_security_level.name].")
 
-/obj/machinery/firealarm/update_icon()
+/obj/machinery/firealarm/Initialize()
+	. = ..()
+	update_icon()
+
+/obj/machinery/firealarm/on_update_icon()
 	overlays.Cut()
 
 	pixel_x = 0
@@ -931,18 +942,18 @@ FIRE ALARM
 	else
 		if(!src.detecting)
 			icon_state = "fire1"
-			set_light(l_range = 4, l_power = 2, l_color = COLOR_RED)
+			set_light(0.25, 0.1, 1, 2, COLOR_RED)
 		else if(z in GLOB.using_map.contact_levels)
 			icon_state = "fire0"
 			var/decl/security_state/security_state = decls_repository.get_decl(GLOB.using_map.security_state)
 			var/decl/security_level/sl = security_state.current_security_level
 
-			set_light(sl.light_range, sl.light_power, sl.light_color_alarm)
+			set_light(sl.light_max_bright, sl.light_inner_range, sl.light_outer_range, 2, sl.light_color_alarm)
 			src.overlays += image(sl.icon, sl.overlay_alarm)
 
-/obj/machinery/firealarm/fire_act(datum/gas_mixture/air, temperature, volume)
+/obj/machinery/firealarm/fire_act(datum/gas_mixture/air, exposed_temperature, exposed_volume)
 	if(src.detecting)
-		if(temperature > T0C+200)
+		if(exposed_temperature > T0C+200)
 			src.alarm()			// added check of detector status here
 	return
 
@@ -960,6 +971,9 @@ FIRE ALARM
 /obj/machinery/firealarm/attackby(obj/item/W as obj, mob/user as mob)
 	if(isScrewdriver(W) && buildstage == 2)
 		wiresexposed = !wiresexposed
+		var/interact_sound = "[wiresexposed ? "open" : "close"]"
+		to_chat(user, "The wires have been [wiresexposed ? "exposed" : "unexposed"].")
+		playsound(src.loc, "sound/machines/Custom_screwdriver[interact_sound].ogg", 50, 1)
 		update_icon()
 		return
 
@@ -989,9 +1003,11 @@ FIRE ALARM
 						to_chat(user, "<span class='warning'>You need 5 pieces of cable to wire \the [src].</span>")
 						return
 				else if(isCrowbar(W))
-					to_chat(user, "You pry out the circuit!")
+					to_chat(user, "Prying out the circuit...")
 					playsound(src.loc, 'sound/items/Crowbar.ogg', 50, 1)
-					spawn(20)
+					if(do_after(user, 30, src))
+						if(!src) return
+						to_chat(user, "You pry out the circuit!")
 						var/obj/item/weapon/firealarm_electronics/circuit = new /obj/item/weapon/firealarm_electronics()
 						circuit.dropInto(user.loc)
 						buildstage = 0
@@ -1119,7 +1135,7 @@ FIRE ALARM
 	for(var/obj/machinery/firealarm/FA in area)
 		fire_alarm.triggerAlarm(loc, FA, duration)
 	update_icon()
-	//playsound(src.loc, 'sound/ambience/signal.ogg', 75, 0)
+	playsound(src, 'sound/machines/fire_alarm.ogg', 75, 0)
 	return
 
 
@@ -1133,8 +1149,8 @@ FIRE ALARM
 	if(istype(frame))
 		buildstage = 0
 		wiresexposed = 1
-		pixel_x = (dir & 3)? 0 : (dir == 4 ? -24 : 24)
-		pixel_y = (dir & 3)? (dir ==1 ? -24 : 24) : 0
+		pixel_x = (dir & 3)? 0 : (dir == 4 ? -21 : 21)
+		pixel_y = (dir & 3)? (dir ==1 ? -21 : 21) : 0
 		frame.transfer_fingerprints_to(src)
 
 /obj/machinery/firealarm/Initialize()
@@ -1152,6 +1168,18 @@ Just a object used in constructing fire alarms
 	icon_state = "door_electronics"
 	desc = "A circuit. It has a label on it, it says \"Can handle heat levels up to 40 degrees celsius!\"."
 	w_class = ITEM_SIZE_SMALL
+	matter = list(MATERIAL_STEEL = 50, MATERIAL_GLASS = 50)
+
+/*
+PARTY ALARM CIRCUIT
+Just a object used in constructing party alarms
+*/
+/obj/item/weapon/partyalarm_electronics
+	name = "party alarm electronics"
+	icon = 'icons/obj/doors/door_assembly.dmi'
+	icon_state = "door_electronics"
+	desc = "A circuit. It has a label on it, it says \"Can handle heat levels up to 40 degrees celsius!\"."
+	w_class = ITEM_SIZE_SMALL
 	matter = list(DEFAULT_WALL_MATERIAL = 50, "glass" = 50)
 
 /obj/machinery/partyalarm
@@ -1159,18 +1187,96 @@ Just a object used in constructing fire alarms
 	desc = "Cuban Pete is in the house!"
 	icon = 'icons/obj/monitors.dmi'
 	icon_state = "fire0"
-	var/detecting = 1.0
-	var/working = 1.0
-	var/time = 10.0
-	var/timing = 0.0
+	var/detecting = 1
+	var/working = 1
+	var/time = 10
+	var/timing = 0
 	var/lockdownbyai = 0
-	anchored = 1.0
+	var/buildstage = 2 // 2 = complete, 1 = no wires,  0 = circuit gone
+	var/wiresexposed = 0
+	anchored = 1
 	use_power = 1
 	idle_power_usage = 2
 	active_power_usage = 6
 
+/obj/machinery/partyalarm/New(loc, dir, atom/frame)
+	..(loc)
+
+	if(dir)
+		src.set_dir(dir)
+
+	if(istype(frame))
+		buildstage = 0
+		wiresexposed = 1
+		pixel_x = (dir & 3)? 0 : (dir == 4 ? -24 : 24)
+		pixel_y = (dir & 3)? (dir ==1 ? -24 : 24) : 0
+		frame.transfer_fingerprints_to(src)
+
+/obj/machinery/partyalarm/attackby(obj/item/W as obj, mob/user as mob)
+	src.add_fingerprint(user)
+
+	if (istype(W, /obj/item/weapon/screwdriver) && buildstage == 2)
+		wiresexposed = !wiresexposed
+		var/interact_sound = "[wiresexposed ? "open" : "close"]"
+		to_chat(user, "The wires have been [wiresexposed ? "exposed" : "unexposed"].")
+		playsound(src.loc, "sound/machines/Custom_screwdriver[interact_sound].ogg", 50, 1)
+		update_icon()
+		return
+
+	if(wiresexposed)
+		switch(buildstage)
+			if(2)
+				if(istype(W, /obj/item/device/multitool))
+					src.detecting = !(src.detecting)
+					if(src.detecting)
+						user.visible_message("<span class='notice'>\The [user] has reconnected [src]'s detecting unit!</span>", "<span class='notice'>You have reconnected [src]'s detecting unit.</span>")
+					else
+						user.visible_message("<span class='notice'>\The [user] has disconnected [src]'s detecting unit!</span>", "<span class='notice'>You have disconnected [src]'s detecting unit.</span>")
+				else if(istype(W, /obj/item/weapon/wirecutters))
+					user.visible_message("<span class='notice'>\The [user] has cut the wires inside \the [src]!</span>", "<span class='notice'>You have cut the wires inside \the [src].</span>")
+					new/obj/item/stack/cable_coil(get_turf(src), 5)
+					playsound(src.loc, 'sound/items/Wirecutter.ogg', 50, 1)
+					buildstage = 1
+					update_icon()
+			if(1)
+				if(istype(W, /obj/item/stack/cable_coil))
+					var/obj/item/stack/cable_coil/C = W
+					if (C.use(5))
+						to_chat(user, "<span class='notice'>You wire \the [src].</span>")
+						buildstage = 2
+						return
+					else
+						to_chat(user, "<span class='warning'>You need 5 pieces of cable to wire \the [src].</span>")
+						return
+				else if(istype(W, /obj/item/weapon/crowbar))
+					to_chat(user, "Prying out the circuit...")
+					playsound(src.loc, 'sound/items/Crowbar.ogg', 50, 1)
+					if(do_after(user, 30, src))
+						if(!src) return
+						to_chat(user, "You pry out the circuit!")
+						var/obj/item/weapon/partyalarm_electronics/circuit = new /obj/item/weapon/partyalarm_electronics()
+						circuit.dropInto(user.loc)
+						buildstage = 0
+						update_icon()
+			if(0)
+				if(istype(W, /obj/item/weapon/partyalarm_electronics))
+					to_chat(user, "You insert the circuit!")
+					qdel(W)
+					buildstage = 1
+					update_icon()
+
+				else if(istype(W, /obj/item/weapon/wrench))
+					to_chat(user, "You remove the party alarm assembly from the wall!")
+					new /obj/item/frame/party_alarm(get_turf(user))
+					playsound(src.loc, 'sound/items/Ratchet.ogg', 50, 1)
+					qdel(src)
+		return
+
+	src.alarm()
+	return
+
 /obj/machinery/partyalarm/attack_hand(mob/user as mob)
-	if(user.stat || stat & (NOPOWER|BROKEN))
+	if(user.stat || stat & (NOPOWER|BROKEN) || wiresexposed)
 		return
 
 	user.machine = src
@@ -1243,3 +1349,30 @@ Just a object used in constructing fire alarms
 
 	if(. == TOPIC_REFRESH)
 		attack_hand(user)
+
+/obj/machinery/partyalarm/on_update_icon()
+	overlays.Cut()
+
+	if(wiresexposed)
+		switch(buildstage)
+			if(2)
+				icon_state="fire_b2"
+			if(1)
+				icon_state="fire_b1"
+			if(0)
+				icon_state="fire_b0"
+		set_light(0)
+		return
+
+	if(stat & BROKEN)
+		icon_state = "firex"
+		set_light(0)
+	else if(stat & NOPOWER)
+		icon_state = "firep"
+		set_light(0)
+	else
+		if(!src.detecting)
+			icon_state = "fire1"
+			set_light(l_range = 4, l_power = 2, l_color = COLOR_CYAN)
+		else
+			icon_state = "fire0"

@@ -18,42 +18,11 @@
 	idle_power_usage = 2
 	active_power_usage = 500
 
-//auto-gibs anything that bumps into it
-/obj/machinery/gibber/autogibber
-	var/turf/input_plate
-
-/obj/machinery/gibber/autogibber/New()
-	..()
-	spawn(5)
-		for(var/i in GLOB.cardinal)
-			var/obj/machinery/mineral/input/input_obj = locate( /obj/machinery/mineral/input, get_step(src.loc, i) )
-			if(input_obj)
-				if(isturf(input_obj.loc))
-					input_plate = input_obj.loc
-					gib_throw_dir = i
-					qdel(input_obj)
-					break
-
-		if(!input_plate)
-			log_misc("a [src] didn't find an input plate.")
-			return
-
-/obj/machinery/gibber/autogibber/Bumped(var/atom/A)
-	if(!input_plate) return
-
-	if(ismob(A))
-		var/mob/M = A
-
-		if(M.loc == input_plate)
-			M.forceMove(src)
-			M.gib()
-
-
 /obj/machinery/gibber/Initialize()
 	. = ..()
 	update_icon()
 
-/obj/machinery/gibber/update_icon()
+/obj/machinery/gibber/on_update_icon()
 	overlays.Cut()
 	if (dirty)
 		src.overlays += image('icons/obj/kitchen.dmi', "grbloody")
@@ -94,10 +63,12 @@
 		if(!G.force_danger())
 			to_chat(user, "<span class='danger'>You need a better grip to do that!</span>")
 			return
+		if(!user.unEquip(W))
+			return
 		move_into_gibber(user,G.affecting)
-		user.drop_from_inventory(G)
 	else if(istype(W, /obj/item/organ))
-		user.drop_from_inventory(W)
+		if(!user.unEquip(W))
+			return
 		qdel(W)
 		user.visible_message("<span class='danger'>\The [user] feeds \the [W] into \the [src], obliterating it.</span>")
 	else

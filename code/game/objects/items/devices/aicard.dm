@@ -39,7 +39,7 @@
 		data["laws"] = laws
 		data["has_laws"] = laws.len
 
-	ui = GLOB.nanomanager.try_update_ui(user, src, ui_key, ui, data, force_open)
+	ui = SSnano.try_update_ui(user, src, ui_key, ui, data, force_open)
 	if (!ui)
 		ui = new(user, src, ui_key, "aicard.tmpl", "[name]", 600, 400, state = state)
 		ui.set_initial_data(data)
@@ -76,7 +76,7 @@
 		update_icon()
 	return 1
 
-/obj/item/weapon/aicard/update_icon()
+/obj/item/weapon/aicard/on_update_icon()
 	overlays.Cut()
 	if(carded_ai)
 		if (!carded_ai.control_disabled)
@@ -121,13 +121,11 @@
 	if(user.client)
 		to_chat(user, "<span class='notice'><b>Transfer successful:</b></span> [ai.name] ([rand(1000,9999)].exe) removed from host terminal and stored within local memory.")
 
-	ai.canmove = 1
 	update_icon()
 	return 1
 
 /obj/item/weapon/aicard/proc/clear()
 	if(carded_ai && istype(carded_ai.loc, /turf))
-		carded_ai.canmove = 0
 		carded_ai.carded = 0
 	SetName(initial(name))
 	carded_ai.calculate_power_usage()
